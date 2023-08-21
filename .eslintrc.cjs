@@ -16,5 +16,13 @@ module.exports = {
   },
   extends: ['@sentry-internal/sdk'],
   ignorePatterns: [],
-  overrides: [],
+  overrides: [
+    {
+      files: ['*.js', '*.ts'],
+      rules: {
+        '@sentry-internal/sdk/no-nullish-coalescing': 'off',
+        '@sentry-internal/sdk/no-optional-chaining': 'off',
+      },
+    },
+  ],
 };
