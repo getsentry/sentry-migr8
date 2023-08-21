@@ -21,6 +21,8 @@ async function _run() {
       alias: 'f',
       describe: 'Glob pattern which files should be transformed',
       default: ['**/*.{js,jsx,ts,tsx,mjs,cjs,mts}'],
+      type: 'string',
+      array: true,
     })
     .option('debug', {
       default: false,

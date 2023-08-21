@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
+    "globby": "^13.2.2",
     "semver": "^7.5.4",
     "yargs": "^17.7.2"
   },
