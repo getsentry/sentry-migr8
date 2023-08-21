@@ -15,7 +15,7 @@ import { getCliPath, getFixturePath } from './testPaths.js';
  */
 export function defaultRunner(
   testAppName,
-  { logLevel = LogLevel.ERROR, timeout = 10_000, ignoreGitWarnings = true } = {}
+  { logLevel = LogLevel.INFO, timeout = 10_000, ignoreGitWarnings = true } = {}
 ) {
   if (!existsSync('tmp')) {
     mkdirSync('tmp');
