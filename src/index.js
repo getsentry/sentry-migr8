@@ -19,6 +19,7 @@ async function _run() {
   const argv = await yargs(hideBin(process.argv))
     .option('files', {
       alias: 'f',
+      type: 'string',
       describe: 'Glob pattern which files should be transformed',
       default: ['**/*.{js,jsx,ts,tsx,mjs,cjs,mts}'],
     })
