@@ -1,0 +1,14 @@
+{
+  "name": "sentry-migr8",
+  "version": "0.0.0",
+  "description": "Run migrations for the Sentry JavaScript SDKs.",
+  "main": "index.js",
+  "repository": "git@github.com:getsentry/sentry-migr8.git",
+  "author": "Sentry",
+  "license": "MIT",
+  "private": false,
+  "volta": {
+    "node": "18.17.1",
+    "yarn": "1.22.19"
+  }
+}
