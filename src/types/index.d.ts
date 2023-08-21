@@ -1,3 +1,4 @@
 export interface RunOptions {
-    src: string[];
+  files: string[];
+  debug: boolean;
 }

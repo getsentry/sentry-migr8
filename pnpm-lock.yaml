@@ -19,6 +19,15 @@ devDependencies:
   '@sentry-internal/eslint-config-sdk':
     specifier: ^7.64.0
     version: 7.64.0(eslint@8.47.0)(typescript@4.9.5)
+  '@types/node':
+    specifier: ^18.17.1
+    version: 18.17.6
+  '@types/semver':
+    specifier: ^7.5.0
+    version: 7.5.0
+  '@types/yargs':
+    specifier: ^17.0.24
+    version: 17.0.24
   eslint:
     specifier: ^8.47.0
     version: 8.47.0
@@ -179,8 +188,22 @@ packages:
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
     dev: true
 
+  /@types/node@18.17.6:
+    resolution: {integrity: sha512-fGmT/P7z7ecA6bv/ia5DlaWCH4YeZvAQMNpUhrJjtAhOhZfoxS1VLUgU2pdk63efSjQaOJWdXMuAJsws+8I6dg==}
+    dev: true
+
   /@types/semver@7.5.0:
     resolution: {integrity: sha512-G8hZ6XJiHnuhQKR7ZmysCeJWE08o8T0AXtk5darsCaTVsYZhhgUrq53jizaR2FvsoeCwJhlmwTjkXBY5Pn/ZHw==}
+    dev: true
+
+  /@types/yargs-parser@21.0.0:
+    resolution: {integrity: sha512-iO9ZQHkZxHn4mSakYV0vFHAVDyEOIJQrV2uZ06HxEPcx+mt8swXoZHIbaaJ2crJYFfErySgktuTZ3BeLz+XmFA==}
+    dev: true
+
+  /@types/yargs@17.0.24:
+    resolution: {integrity: sha512-6i0aC7jV6QzQB8ne1joVZ0eSFIstHsCrobmOtghM11yGlH0j43FKL2UhWdELkyps0zuf7qVTUVCCR+tgSlyLLw==}
+    dependencies:
+      '@types/yargs-parser': 21.0.0
     dev: true
 
   /@typescript-eslint/eslint-plugin@5.62.0(@typescript-eslint/parser@5.62.0)(eslint@8.47.0)(typescript@4.9.5):
