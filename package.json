@@ -15,7 +15,8 @@
     "lint:prettier": "prettier --check \"{src,test}/**/*.js\"",
     "fix": "pnpm fix:eslint && pnpm fix:prettier",
     "fix:eslint": "eslint . --format stylish --fix",
-    "fix:prettier": "prettier --write \"{src,test}/**/*.js\""
+    "fix:prettier": "prettier --write \"{src,test}/**/*.js\"",
+    "dev": "node ./src/index.js"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
