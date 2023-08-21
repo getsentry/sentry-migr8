@@ -1,6 +1,6 @@
-import { globby } from 'globby';
-
 import * as path from 'path';
+
+import { globby } from 'globby';
 
 /**
  * @param {import("types").RunOptions} options
@@ -15,5 +15,6 @@ export async function run(options) {
 
   // TODO: check if in git repo && no changed files
 
+  // eslint-disable-next-line no-console
   console.log(files, transformerOptions);
 }
