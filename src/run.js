@@ -4,6 +4,7 @@ import { intro, outro, select, multiselect, isCancel, spinner } from '@clack/pro
 import { globby } from 'globby';
 
 import { getTransformers } from './utils/getTransformers.js';
+import { abortIfCancelled } from './utils/clackUtils.js';
 /**
  *
  * @param {import("types").RunOptions} options
@@ -21,32 +22,26 @@ export async function run(options) {
 
   const allTransformers = await getTransformers();
 
-  const applyAllTransformers = await select({
-    message: 'Do you want to apply all transformers, or only selected ones?',
-    options: [
-      { value: true, label: 'Apply all transformations.', hint: 'Recommended' },
-      { value: false, label: 'I want to select myself.' },
-    ],
-  });
-
-  if (isCancel(applyAllTransformers)) {
-    aborted();
-    return;
-  }
+  const applyAllTransformers = await abortIfCancelled(
+    select({
+      message: 'Do you want to apply all transformers, or only selected ones?',
+      options: [
+        { value: true, label: 'Apply all transformations.', hint: 'Recommended' },
+        { value: false, label: 'I want to select myself.' },
+      ],
+    })
+  );
 
   let transformers = allTransformers;
   if (!applyAllTransformers) {
-    const selectedTransformers = await multiselect({
-      message: 'Which transformers do you want to apply?',
-      options: allTransformers.map(transformer => {
-        return { value: transformer, label: transformer.name };
-      }),
-    });
-
-    if (isCancel(selectedTransformers)) {
-      aborted();
-      return;
-    }
+    const selectedTransformers = await abortIfCancelled(
+      multiselect({
+        message: 'Which transformers do you want to apply?',
+        options: allTransformers.map(transformer => {
+          return { value: transformer, label: transformer.name };
+        }),
+      })
+    );
 
     transformers = selectedTransformers;
   }
@@ -63,8 +58,4 @@ export async function run(options) {
   }
 
   outro('Great, all done!');
-}
-
-function aborted() {
-  outro('Aborted...');
 }

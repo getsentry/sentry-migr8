@@ -13,7 +13,7 @@ export interface TransformerOptions {
 export interface Transformer {
   /**
    * The name of the transformer
-   * Can be used to e.g. prefix log stmts, or to identify the transformer for other purposes
+   * Will be used in the selection menu or when printing transformer-specific log messages.
    */
   name: string;
 
