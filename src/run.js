@@ -2,11 +2,10 @@ import * as path from 'path';
 
 import { intro, outro, select, multiselect, spinner, note } from '@clack/prompts';
 import { globby } from 'globby';
+import chalk from 'chalk';
 
 import { getTransformers } from './utils/getTransformers.js';
 import { abortIfCancelled } from './utils/clackUtils.js';
-
-import chalk from 'chalk';
 
 /**
  *
