@@ -1,5 +1,5 @@
 export interface RunOptions {
-  files: string[];
+  filePatterns: string[];
   debug: boolean;
 }
 

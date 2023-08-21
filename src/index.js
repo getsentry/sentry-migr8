@@ -17,9 +17,8 @@ if (!satisfies(process.version, NODE_VERSION_RANGE)) {
 
 async function _run() {
   const argv = await yargs(hideBin(process.argv))
-    .option('files', {
+    .option('filePatterns', {
       alias: 'f',
-      type: 'string',
       describe: 'Glob pattern which files should be transformed',
       default: ['**/*.{js,jsx,ts,tsx,mjs,cjs,mts}'],
     })
