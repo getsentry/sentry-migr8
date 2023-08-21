@@ -1,6 +1,6 @@
 import * as path from 'path';
 
-import { intro, outro, select, multiselect, isCancel, spinner } from '@clack/prompts';
+import { intro, outro, select, multiselect, spinner } from '@clack/prompts';
 import { globby } from 'globby';
 
 import { getTransformers } from './utils/getTransformers.js';
