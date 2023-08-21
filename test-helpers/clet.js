@@ -10,7 +10,7 @@ import { getCliPath, getFixturePath } from './testPaths.js';
 
 /**
  * @param {string} testAppName
- * @param {{ logLevel?: import('clet').LogLevel, timeout?: number, ignoreGitWarnings?: boolean }} options
+ * @param {{ logLevel?: import('clet').LogLevel, timeout?: number, skipGitChecks?: boolean }} options
  * @returns {import('clet').TestRunner}
  */
 export function defaultRunner(testAppName, { logLevel = LogLevel.INFO, timeout = 10_000, skipGitChecks = true } = {}) {
