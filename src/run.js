@@ -59,8 +59,8 @@ We will guide you through the process step by step.`
 
     await transformer.transform(files, options);
 
-    s.stop(`Transform ${transformer.name} completed.`);
+    s.stop(`Transformer ${transformer.name} completed.`);
   }
 
-  outro('Great, all done!');
+  outro('All transformers completed!');
 }

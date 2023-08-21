@@ -12,11 +12,12 @@
     "lint": "pnpm lint:prettier && pnpm lint:eslint && pnpm lint:tsc",
     "lint:eslint": "eslint . --format stylish",
     "lint:tsc": "tsc",
-    "lint:prettier": "prettier --check \"{src,test}/**/*.js\"",
+    "lint:prettier": "prettier --check \"{src,test-helpers,test-fixtures}/**/*.js\"",
     "fix": "pnpm fix:eslint && pnpm fix:prettier",
     "fix:eslint": "eslint . --format stylish --fix",
-    "fix:prettier": "prettier --write \"{src,test}/**/*.js\"",
-    "dev": "node ./src/index.js"
+    "fix:prettier": "prettier --write \"{src,test-helpers,test-fixtures}/**/*.js\"",
+    "dev": "node ./src/index.js",
+    "test": "node --test src"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
@@ -27,9 +28,10 @@
   },
   "devDependencies": {
     "@sentry-internal/eslint-config-sdk": "^7.64.0",
-    "@types/node": "^18.17.1",
+    "@types/node": "^18.17.6",
     "@types/semver": "^7.5.0",
     "@types/yargs": "^17.0.24",
+    "clet": "^1.0.1",
     "eslint": "^8.47.0",
     "prettier": "^3.0.2",
     "typescript": "^4.9.5"

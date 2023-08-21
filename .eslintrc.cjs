@@ -24,5 +24,11 @@ module.exports = {
         '@sentry-internal/sdk/no-optional-chaining': 'off',
       },
     },
+    {
+      files: ['test-helpers/**/*.js', 'test-fixtures/**/*.js', 'src/**/*.test.js'],
+      rules: {
+        'import/no-extraneous-dependencies': 'off',
+      },
+    },
   ],
 };
