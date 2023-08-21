@@ -13,10 +13,7 @@ import { getCliPath, getFixturePath } from './testPaths.js';
  * @param {{ logLevel?: import('clet').LogLevel, timeout?: number, ignoreGitWarnings?: boolean }} options
  * @returns {import('clet').TestRunner}
  */
-export function defaultRunner(
-  testAppName,
-  { logLevel = LogLevel.INFO, timeout = 10_000, ignoreGitWarnings = true } = {}
-) {
+export function defaultRunner(testAppName, { logLevel = LogLevel.INFO, timeout = 10_000, skipGitChecks = true } = {}) {
   if (!existsSync('tmp')) {
     mkdirSync('tmp');
   }
@@ -30,11 +27,7 @@ export function defaultRunner(
     .cwd(tmpPath, { init: true, clean: true })
     .debug(logLevel)
     .timeout(timeout)
-    .fork(getCliPath(), [], {});
-
-  if (ignoreGitWarnings) {
-    return res.stdin(/You have uncommitted changes in your git repository. Do you still want to continue/, KEYS.ENTER);
-  }
+    .fork(getCliPath(), skipGitChecks ? ['--skipGitChecks=true'] : [], {});
 
   return res;
 }

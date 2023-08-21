@@ -29,6 +29,11 @@ async function _run() {
       describe: 'Enable verbose logging',
       type: 'boolean',
     })
+    .option('skipGitChecks', {
+      default: false,
+      describe: 'Skip git status checks',
+      type: 'boolean',
+    })
     .parse();
 
   await run(argv);

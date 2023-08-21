@@ -1,13 +1,7 @@
 export interface RunOptions {
   filePatterns: string[];
   debug: boolean;
-}
-
-/**
- * Options for the `transform` function
- */
-export interface TransformerOptions {
-  debug: boolean;
+  skipGitChecks: boolean;
 }
 
 export interface Transformer {
@@ -23,5 +17,5 @@ export interface Transformer {
    * @param files
    * @param options
    */
-  transform(files: string[], options: TransformerOptions): Promise<void>;
+  transform(files: string[], options: RunOptions): Promise<void>;
 }

@@ -23,7 +23,9 @@ We will guide you through the process step by step.`
     path.resolve(relativePath)
   );
 
-  await checkGitStatus();
+  if (!options.skipGitChecks) {
+    await checkGitStatus();
+  }
 
   const allTransformers = await getTransformers();
 
