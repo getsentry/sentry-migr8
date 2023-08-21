@@ -1,18 +1,24 @@
 import * as path from 'path';
 
-import { intro, outro, select, multiselect, spinner } from '@clack/prompts';
+import { intro, outro, select, multiselect, spinner, note } from '@clack/prompts';
 import { globby } from 'globby';
 
 import { getTransformers } from './utils/getTransformers.js';
 import { abortIfCancelled } from './utils/clackUtils.js';
+
+import chalk from 'chalk';
+
 /**
  *
  * @param {import("types").RunOptions} options
  */
 export async function run(options) {
-  intro('Welcome to sentry-migr8!');
-  intro('This command line tool will update your Sentry JavaScript setup to the latest version.');
-  intro('We will guide you through the process step by step.');
+  intro(chalk.inverse('Welcome to sentry-migr8!'));
+  note(
+    `This command line tool will update your Sentry JavaScript setup to the latest version.
+
+We will guide you through the process step by step.`
+  );
 
   const files = (await globby(options.filePatterns, { gitignore: true })).map(relativePath =>
     path.resolve(relativePath)
