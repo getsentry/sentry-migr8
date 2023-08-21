@@ -3,15 +3,29 @@
   "version": "0.0.0",
   "description": "Run migrations for the Sentry JavaScript SDKs.",
   "main": "index.js",
+  "type": "module",
   "repository": "git@github.com:getsentry/sentry-migr8.git",
   "author": "Sentry",
   "license": "MIT",
   "private": false,
-  "volta": {
-    "node": "18.17.1"
+  "scripts": {
+    "lint": "pnpm lint:prettier && pnpm lint:eslint",
+    "lint:eslint": "eslint . --format stylish",
+    "lint:prettier": "prettier --check \"{src,test}/**/*.js\"",
+    "fix": "pnpm fix:eslint && pnpm fix:prettier",
+    "fix:eslint": "eslint . --format stylish --fix",
+    "fix:prettier": "prettier --write \"{src,test}/**/*.js\""
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
     "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@sentry-internal/eslint-config-sdk": "^7.64.0",
+    "eslint": "^8.47.0",
+    "prettier": "^3.0.2"
+  },
+  "volta": {
+    "node": "18.17.1"
   }
 }
