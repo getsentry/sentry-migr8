@@ -9,8 +9,9 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "lint": "pnpm lint:prettier && pnpm lint:eslint",
+    "lint": "pnpm lint:prettier && pnpm lint:eslint && pnpm lint:tsc",
     "lint:eslint": "eslint . --format stylish",
+    "lint:tsc": "tsc",
     "lint:prettier": "prettier --check \"{src,test}/**/*.js\"",
     "fix": "pnpm fix:eslint && pnpm fix:prettier",
     "fix:eslint": "eslint . --format stylish --fix",

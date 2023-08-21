@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "alwaysStrict": false,
+    "lib": ["es6", "dom"],
+    "moduleResolution": "node",
+    "noErrorTruncation": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strict": true,
+    "strictBindCallApply": false,
+    "target": "es6",
+    "allowSyntheticDefaultImports": true,
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "paths": {
+      // internal use only
+      "types": ["./src/types/index"]
+    }
+  },
+  "include": ["src/**/*", "src/types/**/*"]
+}
