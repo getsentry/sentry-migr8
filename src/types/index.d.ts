@@ -2,6 +2,11 @@ export interface RunOptions {
   filePatterns: string[];
   debug: boolean;
   skipGitChecks: boolean;
+  sdk: string | undefined;
+}
+
+export interface TransformerOptions extends RunOptions {
+  sdk: string;
 }
 
 export interface Transformer {
@@ -17,5 +22,16 @@ export interface Transformer {
    * @param files
    * @param options
    */
-  transform(files: string[], options: RunOptions): Promise<void>;
+  transform(files: string[], options: TransformerOptions): Promise<void>;
 }
+
+export type PackageDotJson = {
+  scripts?: Record<string, string | undefined>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
+
+export type NpmPackage = {
+  name: string;
+  version: string;
+};

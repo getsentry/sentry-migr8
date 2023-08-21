@@ -34,6 +34,12 @@ async function _run() {
       describe: 'Skip git status checks',
       type: 'boolean',
     })
+    .option('sdk', {
+      type: 'string',
+      array: false,
+      describe:
+        "The SDK you want to apply the migrations for. By default, migr8 will try to auto-detect the SDK. If you want to override this, you set the SDK's full name (e.g. '@sentry/browser').",
+    })
     .parse();
 
   await run(argv);

@@ -1,11 +1,12 @@
 import * as path from 'path';
 
-import { intro, outro, select, multiselect, spinner, note } from '@clack/prompts';
+import { intro, outro, select, multiselect, spinner, note, log } from '@clack/prompts';
 import { globby } from 'globby';
 import chalk from 'chalk';
 
 import { getTransformers } from './utils/getTransformers.js';
-import { abortIfCancelled, checkGitStatus } from './utils/clackUtils.js';
+import { abortIfCancelled, checkGitStatus, getPackageDotJson } from './utils/clackUtils.js';
+import { SENTRY_SDK_PACKAGE_NAMES, findInstalledPackageFromList } from './utils/package-json.js';
 
 /**
  *
@@ -26,6 +27,8 @@ We will guide you through the process step by step.`
   if (!options.skipGitChecks) {
     await checkGitStatus();
   }
+
+  let targetSdk = options.sdk ?? (await detectSdk());
 
   const allTransformers = await getTransformers();
 
@@ -59,10 +62,23 @@ We will guide you through the process step by step.`
     const s = spinner();
     s.start(`Running transformer ${transformer.name}...`);
 
-    await transformer.transform(files, options);
+    await transformer.transform(files, { ...options, sdk: targetSdk });
 
     s.stop(`Transformer ${transformer.name} completed.`);
   }
 
   outro('All transformers completed!');
+}
+
+/**
+ * @returns {Promise<string>}
+ */
+async function detectSdk() {
+  const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, await getPackageDotJson());
+
+  const sdkName = sdkPackage ? sdkPackage.name : '@sentry/browser';
+
+  log.info(`Detected SDK: ${sdkName}`);
+
+  return sdkName;
 }
