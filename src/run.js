@@ -5,7 +5,7 @@ import { globby } from 'globby';
 import chalk from 'chalk';
 
 import { getTransformers } from './utils/getTransformers.js';
-import { abortIfCancelled } from './utils/clackUtils.js';
+import { abortIfCancelled, checkGitStatus } from './utils/clackUtils.js';
 
 /**
  *
@@ -23,7 +23,7 @@ We will guide you through the process step by step.`
     path.resolve(relativePath)
   );
 
-  // TODO: check if in git repo && no changed files
+  await checkGitStatus();
 
   const allTransformers = await getTransformers();
 

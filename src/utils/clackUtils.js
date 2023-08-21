@@ -21,34 +21,86 @@ export async function abortIfCancelled(input) {
 }
 
 /**
- * Checks if the user is inside a git repository.
- * If not, it asks the user if they want to continue, otherwise we're fine.
+ * Checks if the user is inside a git repository and if there are uncommitted changes.
+ * Users can continue in both cases but we want to make sure they know what they're doing.
  *
  * @returns {Promise<void>}
  */
-export async function confirmContinueEvenThoughNoGitRepo() {
-  try {
-    childProcess.execSync('git rev-parse --is-inside-work-tree', {
-      stdio: 'ignore',
-    });
-  } catch {
+export async function checkGitStatus() {
+  const inGitRepo = isInGitRepo();
+
+  if (!inGitRepo) {
     const continueWithoutGit = await abortIfCancelled(
       confirm({
         message:
           'You are not inside a git repository. Migr8 will modify and update some of your files. Do you still want to continue?',
+        initialValue: false,
       })
     );
 
     if (!continueWithoutGit) {
-      abort(undefined);
+      abort();
+    }
+    // No need to check for changed files if not in repo!
+    return;
+  }
+
+  const hasChanges = hasChangedFiles();
+  if (hasChanges) {
+    const continueWithChanges = await abortIfCancelled(
+      confirm({
+        message: 'You have uncommitted changes in your git repository. Do you still want to continue?',
+        initialValue: false,
+      })
+    );
+
+    if (!continueWithChanges) {
+      abort();
     }
   }
 }
 
 /**
+ * Checks if the user is inside a git repository.
+ * If not, it asks the user if they want to continue, otherwise we're fine.
+ *
+ * @returns {boolean}
+ */
+function isInGitRepo() {
+  try {
+    childProcess.execSync('git rev-parse --is-inside-work-tree', {
+      stdio: 'ignore',
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks if there are changed and yet uncomitted files in the repository.
+ * If yes, asks the user if they want to continue or abort and restart after commiting.
+ *
+ * @returns {boolean}
+ */
+function hasChangedFiles() {
+  try {
+    childProcess.execSync('git update-index --refresh', {
+      stdio: 'ignore',
+    });
+    childProcess.execSync('git diff-index --quiet HEAD', {
+      stdio: 'ignore',
+    });
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Aborts the process with a custom message and exit code.
- * @param {string | undefined} customMessage
- * @param {number} exitCode
+ * @param {string=} customMessage
+ * @param {number=} exitCode
  */
 function abort(customMessage, exitCode = 0) {
   cancel(customMessage ?? 'Exiting, see you next time :)');
