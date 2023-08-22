@@ -22,5 +22,5 @@
       "types": ["./src/types/index"]
     }
   },
-  "include": ["src/**/*", "src/types/**/*", "test-fixtures/**/*", "test-helpers/**/*"]
+  "include": ["src/**/*", "src/types/**/*", "test-helpers/**/*"]
 }

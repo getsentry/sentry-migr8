@@ -1,3 +1,4 @@
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync } from 'fs';
 import path from 'path';
 
 /**
@@ -14,4 +15,31 @@ export function getCliPath() {
  */
 export function getFixturePath(testAppName) {
   return path.resolve(path.join(process.cwd(), 'test-fixtures', testAppName));
+}
+
+/**
+ *
+ * @param {string} originalDir
+ * @returns {string}
+ */
+export function makeTmpDir(originalDir) {
+  if (!existsSync('tmp')) {
+    mkdirSync('tmp');
+  }
+
+  const tmpPath = mkdtempSync(`tmp/${path.basename(originalDir)}`);
+  cpSync(originalDir, tmpPath, { recursive: true });
+
+  return tmpPath;
+}
+
+/**
+ *
+ * @param {string} dir
+ * @param {string} fileName
+ * @returns {string}
+ */
+export function getDirFileContent(dir, fileName) {
+  const fullPath = path.join(dir, fileName);
+  return readFileSync(fullPath, 'utf-8');
 }

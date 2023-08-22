@@ -1,8 +1,9 @@
 export interface RunOptions {
   filePatterns: string[];
-  debug: boolean;
-  skipGitChecks: boolean;
-  sdk: string | undefined;
+  debug?: boolean;
+  skipGitChecks?: boolean;
+  dry?: boolean;
+  sdk?: string;
 }
 
 export interface TransformerOptions extends RunOptions {

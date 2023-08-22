@@ -15,7 +15,6 @@ module.exports = {
     project: ['tsconfig.json'],
   },
   extends: ['@sentry-internal/sdk'],
-  ignorePatterns: [],
   overrides: [
     {
       files: ['*.js', '*.ts'],
@@ -25,9 +24,17 @@ module.exports = {
       },
     },
     {
-      files: ['test-helpers/**/*.js', 'test-fixtures/**/*.js', 'src/**/*.test.js'],
+      files: ['test-helpers/**/*.js', 'test-fixtures/**/*.{js,ts}', 'src/**/*.test.js'],
       rules: {
         'import/no-extraneous-dependencies': 'off',
+      },
+    },
+    {
+      files: ['test-fixtures/**/*.{js,ts}'],
+      rules: {
+        'import/no-unresolved': 'off',
+        // To avoid errors for e.g. `Sentry.init()`
+        '@typescript-eslint/no-unsafe-member-access': 'off',
       },
     },
   ],

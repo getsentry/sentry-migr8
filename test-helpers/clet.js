@@ -1,8 +1,8 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 
 import { runner } from 'clet';
 
-import { getCliPath, getFixturePath } from './testPaths.js';
+import { getCliPath, getFixturePath, makeTmpDir } from './testPaths.js';
 
 /**
  * Some utilities on top of clet.
@@ -14,14 +14,11 @@ import { getCliPath, getFixturePath } from './testPaths.js';
  * @returns {import('clet').TestRunner}
  */
 export function defaultRunner(testAppName, { logLevel = LogLevel.INFO, timeout = 10_000, skipGitChecks = true } = {}) {
+  const testApp = getFixturePath(testAppName);
+  const tmpPath = makeTmpDir(testApp);
   if (!existsSync('tmp')) {
     mkdirSync('tmp');
   }
-
-  // Make tmp dir and copy test app into it
-  const testApp = getFixturePath(testAppName);
-  const tmpPath = mkdtempSync(`tmp/${testAppName}`);
-  cpSync(testApp, tmpPath, { recursive: true });
 
   const res = runner()
     .cwd(tmpPath, { init: true, clean: true })

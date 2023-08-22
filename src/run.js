@@ -20,6 +20,12 @@ export async function run(options) {
 We will guide you through the process step by step.`
   );
 
+  note(`We will run transforms on files matching the following ${
+    options.filePatterns.length > 1 ? 'patterns' : 'pattern'
+  }, ignoring any gitignored files:
+${options.filePatterns.join('\n')}
+(You can change this by specifying the --filePatterns option)`);
+
   const files = (await globby(options.filePatterns, { gitignore: true })).map(relativePath =>
     path.resolve(relativePath)
   );
@@ -62,9 +68,14 @@ We will guide you through the process step by step.`
     const s = spinner();
     s.start(`Running transformer ${transformer.name}...`);
 
-    await transformer.transform(files, { ...options, sdk: targetSdk });
-
-    s.stop(`Transformer ${transformer.name} completed.`);
+    try {
+      await transformer.transform(files, { ...options, sdk: targetSdk });
+      s.stop(`Transformer ${transformer.name} completed.`);
+    } catch (error) {
+      s.stop(`Transformer ${transformer.name} failed to complete with error:`);
+      // eslint-disable-next-line no-console
+      console.error(error);
+    }
   }
 
   outro('All transformers completed!');

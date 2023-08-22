@@ -1,15 +1,17 @@
-import fs from 'fs';
 import path from 'path';
 import url from 'url';
+import { readdirSync } from 'fs';
 
 /**
  * @returns {Promise<import('types').Transformer[]>}
  */
 export function getTransformers() {
   const transformersPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), '../transformers');
-  const transformers = fs.readdirSync(transformersPath);
+  const transformers = readdirSync(transformersPath);
 
-  return Promise.all(transformers.map(transformer => getTransformer(path.join(transformersPath, transformer))));
+  return Promise.all(
+    transformers.map(transformer => getTransformer(path.join(transformersPath, transformer, 'index.js')))
+  );
 }
 
 /**
