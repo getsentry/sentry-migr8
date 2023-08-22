@@ -17,7 +17,7 @@ module.exports = {
   extends: ['@sentry-internal/sdk'],
   overrides: [
     {
-      files: ['*.js', '*.ts'],
+      files: ['*.js', '*.ts', '*.cjs'],
       rules: {
         '@sentry-internal/sdk/no-nullish-coalescing': 'off',
         '@sentry-internal/sdk/no-optional-chaining': 'off',
