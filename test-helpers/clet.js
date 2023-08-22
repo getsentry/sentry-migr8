@@ -1,5 +1,3 @@
-import { existsSync, mkdirSync } from 'fs';
-
 import { runner } from 'clet';
 
 import { getCliPath, getFixturePath, makeTmpDir } from './testPaths.js';
@@ -16,9 +14,6 @@ import { getCliPath, getFixturePath, makeTmpDir } from './testPaths.js';
 export function defaultRunner(testAppName, { logLevel = LogLevel.INFO, timeout = 10_000, skipGitChecks = true } = {}) {
   const testApp = getFixturePath(testAppName);
   const tmpPath = makeTmpDir(testApp);
-  if (!existsSync('tmp')) {
-    mkdirSync('tmp');
-  }
 
   const res = runner()
     .cwd(tmpPath, { init: true, clean: true })

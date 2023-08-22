@@ -4,6 +4,7 @@ export interface RunOptions {
   skipGitChecks?: boolean;
   dry?: boolean;
   sdk?: string;
+  cwd?: string;
 }
 
 export interface Transformer {

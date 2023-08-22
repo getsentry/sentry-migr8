@@ -2,7 +2,7 @@ import * as childProcess from 'node:child_process';
 import { promises as fsPromises } from 'node:fs';
 import * as path from 'node:path';
 
-import { cancel, isCancel, confirm, log } from '@clack/prompts';
+import { cancel, isCancel, confirm } from '@clack/prompts';
 
 /**
  * Users can cancel at every input (Cmd+c). Clack returns a symbol for that case which we need to check for.
@@ -111,16 +111,13 @@ function abort(customMessage, exitCode = 0) {
 
 /**
  * Reads the package.json from the current working directory.
+ * @param {string} cwd
  * @returns {Promise<import('types').PackageDotJson>}
  */
-export async function getPackageDotJson() {
-  const packageJsonFileContents = await fsPromises
-    .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
-    .catch(() => {
-      return '';
-    });
-
-  let packageJson = undefined;
+export async function getPackageDotJson(cwd) {
+  const packageJsonFileContents = await fsPromises.readFile(path.join(cwd, 'package.json'), 'utf8').catch(() => {
+    return undefined;
+  });
 
   if (!packageJsonFileContents) {
     return {};
@@ -128,11 +125,8 @@ export async function getPackageDotJson() {
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    packageJson = JSON.parse(packageJsonFileContents);
+    return JSON.parse(packageJsonFileContents);
   } catch {
-    log.error('Unable to parse your package.json. Make sure it has a valid format!');
-    await abort(undefined, -1);
+    return {};
   }
-
-  return packageJson;
 }

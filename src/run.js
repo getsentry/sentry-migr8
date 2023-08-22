@@ -26,7 +26,9 @@ We will guide you through the process step by step.`
 ${options.filePatterns.join('\n')}
 (You can change this by specifying the --filePatterns option)`);
 
-  const files = (await globby(options.filePatterns, { gitignore: true })).map(relativePath =>
+  const cwd = options.cwd ?? process.cwd();
+
+  const files = (await globby(options.filePatterns, { cwd, gitignore: true })).map(relativePath =>
     path.resolve(relativePath)
   );
 
@@ -34,7 +36,7 @@ ${options.filePatterns.join('\n')}
     await checkGitStatus();
   }
 
-  let targetSdk = options.sdk ?? (await detectSdk());
+  let targetSdk = options.sdk ?? (await detectSdk(cwd));
 
   const allTransformers = await getTransformers();
 
@@ -82,10 +84,11 @@ ${options.filePatterns.join('\n')}
 }
 
 /**
+ * @param {string} cwd
  * @returns {Promise<string | undefined>}
  */
-async function detectSdk() {
-  const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, await getPackageDotJson());
+async function detectSdk(cwd) {
+  const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, await getPackageDotJson(cwd));
 
   const sdkName = sdkPackage ? sdkPackage.name : undefined;
 
