@@ -37,6 +37,9 @@ describe('transformers | replayConfig', () => {
     const actual2 = getDirFileContent(tmpDir, 'myReactApp.ts');
     const actual3 = getDirFileContent(tmpDir, 'myReactApp.tsx');
     const actual4 = getDirFileContent(tmpDir, 'upToDateConfig.js');
+    const actual5 = getDirFileContent(tmpDir, 'oldSampleRates.js');
+    const actual6 = getDirFileContent(tmpDir, 'oldSampleRatesSeparateFile.js');
+    const actual7 = getDirFileContent(tmpDir, 'withRequire.js');
 
     assertStringEquals(
       actual1,
@@ -59,6 +62,9 @@ Sentry.init({
       mask: [".my-mask-text-class", ".my-mask-text-selector", "[my-mask-text-attr]"]
     }),
   ],
+
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 0.75
 });`
     );
     assertStringEquals(
@@ -75,6 +81,8 @@ const replay = new Replay({
 
 Sentry.init({
   integrations: [replay],
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 0.75
 });`
     );
 
@@ -112,6 +120,57 @@ Sentry.init({
       useCompression: true
     }),
   ],
+});`
+    );
+
+    assertStringEquals(
+      actual5,
+      `import * as Sentry from '@sentry/react';
+
+Sentry.init({
+  integrations: [
+    new Sentry.Replay({}),
+  ],
+
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 0.75
+});`
+    );
+
+    assertStringEquals(
+      actual6,
+      `import * as Sentry from '@sentry/react';
+
+const replay = new Sentry.Replay({
+  sessionSampleRate: 0.1,
+  errorSampleRate: 0.75,
+  block: [".my-block-class"]
+});`
+    );
+    assertStringEquals(
+      actual7,
+      `const Sentry = require('@sentry/react');
+
+Sentry.init({
+  integrations: [
+    new Sentry.Replay({
+      maskInputOptions: { email: true, text: false },
+      other: "other",
+
+      block: [
+        '.existing-block',
+        ".my-blocks-selector",
+        "[my-block-attr]",
+        ".my-block-class"
+      ],
+
+      ignore: [".my-ignore-class"],
+      mask: [".my-mask-text-class", ".my-mask-text-selector", "[my-mask-text-attr]"]
+    }),
+  ],
+
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 0.75
 });`
     );
   });

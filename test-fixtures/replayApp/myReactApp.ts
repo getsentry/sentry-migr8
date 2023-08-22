@@ -8,6 +8,8 @@ const replay = new Replay({
   maskInputOptions: { email: true, text: false },
   maskTextClass: 'my-mask-text-class',
   maskTextSelector: '.my-mask-text-selector,[my-mask-text-attr]',
+  sessionSampleRate: 0.1,
+  errorSampleRate: 0.75,
 });
 
 Sentry.init({

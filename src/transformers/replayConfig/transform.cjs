@@ -19,18 +19,31 @@ module.exports = function (fileInfo, api) {
   let ignore = j.arrayExpression([]);
   let mask = j.arrayExpression([]);
 
+  /** @type {number | undefined} */
+  let replaysSessionSampleRate = undefined;
+  /** @type {number | undefined} */
+  let replaysOnErrorSampleRate = undefined;
+
   const source = fileInfo.source;
+  const tree = j(source);
 
   // First find new XX.Replay()
-  const newReplayExpression = getReplayNewExpression(j, source);
+  const newReplayExpression = getReplayNewExpression(j, tree);
 
   // If no new Replay() found, nothing to do
   if (!newReplayExpression) {
     return undefined;
   }
 
+  // If we have an old sample rate, check for Sentry.init() as well
+  const hasOldSampleRate = /(sessionSampleRate)|(errorSampleRate)/gim.test(source);
+  const sentryInitExpression = hasOldSampleRate ? getSentryInitExpression(j, tree, source) : undefined;
+
   // Short circuit: If none of the "old" options are used, we just bail (=nothing to do)
-  if (!/(blockSelector)|(blockClass)|(ignoreClass)|(maskTextClass)|(maskTextSelector)/gim.test(source)) {
+  if (
+    !hasOldSampleRate &&
+    !/(blockSelector)|(blockClass)|(ignoreClass)|(maskTextClass)|(maskTextSelector)/gim.test(source)
+  ) {
     return;
   }
 
@@ -109,6 +122,29 @@ module.exports = function (fileInfo, api) {
         return;
       }
     }
+
+    // Find numeric literal values for sample rates
+    // only do that if we have a Sentry.init() in the same file, otherwise there is no place to put it
+    // and we lose the sample rate
+    if (sentryInitExpression && path.value.value.type === 'NumericLiteral') {
+      /*
+        We want to handle these:
+        sessionSampleRate: 0.1,
+        errorSampleRate: 0.75,
+      */
+
+      const value = path.value.value.value;
+      if (keyName === 'sessionSampleRate') {
+        replaysSessionSampleRate = value;
+        j(path).remove();
+        return;
+      }
+      if (keyName === 'errorSampleRate') {
+        replaysOnErrorSampleRate = value;
+        j(path).remove();
+        return;
+      }
+    }
   });
 
   // Finally, actually update the options object
@@ -130,7 +166,33 @@ module.exports = function (fileInfo, api) {
     }
   });
 
-  return newReplayExpression.toSource();
+  // Also maybe update the Sentry.init options
+  if (
+    sentryInitExpression &&
+    (typeof replaysSessionSampleRate === 'number' || typeof replaysOnErrorSampleRate === 'number')
+  ) {
+    sentryInitExpression.forEach(path => {
+      const arg = path.value.arguments[0];
+
+      if (arg.type !== 'ObjectExpression') {
+        return;
+      }
+
+      if (typeof replaysSessionSampleRate === 'number') {
+        arg.properties.push(
+          j.property('init', j.identifier('replaysSessionSampleRate'), j.literal(replaysSessionSampleRate))
+        );
+      }
+
+      if (typeof replaysOnErrorSampleRate === 'number') {
+        arg.properties.push(
+          j.property('init', j.identifier('replaysOnErrorSampleRate'), j.literal(replaysOnErrorSampleRate))
+        );
+      }
+    });
+  }
+
+  return tree.toSource();
 };
 
 /**
@@ -152,21 +214,51 @@ function convertClassName(className) {
 /**
  *
  * @param {import('jscodeshift')} j
- * @param {string} source
+ * @param {import('jscodeshift').Collection} tree
  * @returns {undefined | import('jscodeshift').Collection<import('jscodeshift').NewExpression>}
  */
-function getReplayNewExpression(j, source) {
+function getReplayNewExpression(j, tree) {
   // First try to find new XX.Replay()
-  const a = j(source).find(j.NewExpression, { callee: { property: { name: 'Replay' } } });
+  const a = tree.find(j.NewExpression, { callee: { property: { name: 'Replay' } } });
 
   if (a.size() > 0) {
     return a;
   }
 
   // Else try new Replay()
-  const b = j(source).find(j.NewExpression, { callee: { name: 'Replay' } });
+  const b = tree.find(j.NewExpression, { callee: { name: 'Replay' } });
   if (b.size() > 0) {
     return b;
+  }
+
+  return undefined;
+}
+
+/**
+ *
+ * @param {import('jscodeshift')} j
+ * @param {import('jscodeshift').Collection} tree
+ * @param {string} source
+ * @returns {undefined | import('jscodeshift').Collection<import('jscodeshift').CallExpression>}
+ */
+function getSentryInitExpression(j, tree, source) {
+  // First try to find Sentry.init()
+  const a = tree.find(j.CallExpression, {
+    callee: { type: 'MemberExpression', object: { name: 'Sentry' }, property: { name: 'init' } },
+  });
+
+  if (a.size() > 0) {
+    return a;
+  }
+
+  // Else try init() - only if the file contains an import for Sentry!
+  const importRegex = /from ['"]@sentry\/(.+)['"]/gim;
+  const requireRegex = /require\(['"]@sentry\/(.+)['"]\)/gim;
+  if (importRegex.test(source) || requireRegex.test(source)) {
+    const b = tree.find(j.CallExpression, { callee: { type: 'Identifier', name: 'Replay' } });
+    if (b.size() > 0) {
+      return b;
+    }
   }
 
   return undefined;

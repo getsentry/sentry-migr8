@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/react';
+const Sentry = require('@sentry/react');
 
 Sentry.init({
   integrations: [
