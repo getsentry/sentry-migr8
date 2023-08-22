@@ -3,6 +3,8 @@ import url from 'url';
 
 import { run as jscodeshift } from 'jscodeshift/src/Runner.js';
 
+import { JSCODESHIFT_EXTENSIONS } from '../../utils/jscodeshift.js';
+
 /**
  * @type {import('types').Transformer}
  */
@@ -16,7 +18,7 @@ export default {
       print: options.dry,
       silent: !options.debug,
       verbose: options.debug ? 2 : 0,
-      extensions: 'js,jsx,ts,tsx',
+      extensions: JSCODESHIFT_EXTENSIONS,
       parser: 'tsx',
     });
   },

@@ -117,8 +117,7 @@ export async function getPackageDotJson() {
   const packageJsonFileContents = await fsPromises
     .readFile(path.join(process.cwd(), 'package.json'), 'utf8')
     .catch(() => {
-      log.error('Could not find your package.json. Make sure to run migr8 in the root of your app!');
-      return abort(undefined, -1);
+      return '';
     });
 
   let packageJson = undefined;
