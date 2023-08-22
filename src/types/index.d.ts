@@ -6,10 +6,6 @@ export interface RunOptions {
   sdk?: string;
 }
 
-export interface TransformerOptions extends RunOptions {
-  sdk: string;
-}
-
 export interface Transformer {
   /**
    * The name of the transformer
@@ -23,7 +19,7 @@ export interface Transformer {
    * @param files
    * @param options
    */
-  transform(files: string[], options: TransformerOptions): Promise<void>;
+  transform(files: string[], options: RunOptions): Promise<void>;
 }
 
 export type PackageDotJson = {

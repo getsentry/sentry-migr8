@@ -82,14 +82,21 @@ ${options.filePatterns.join('\n')}
 }
 
 /**
- * @returns {Promise<string>}
+ * @returns {Promise<string | undefined>}
  */
 async function detectSdk() {
   const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, await getPackageDotJson());
 
-  const sdkName = sdkPackage ? sdkPackage.name : '@sentry/browser';
+  const sdkName = sdkPackage ? sdkPackage.name : undefined;
 
-  log.info(`Detected SDK: ${sdkName}`);
+  if (sdkName) {
+    log.info(`Detected SDK: ${sdkName}`);
+  } else {
+    log.info(
+      `No Sentry SDK detected. Skipping all import-rewriting transformations.
+Specify --sdk if you want to override the detection.`
+    );
+  }
 
   return sdkName;
 }
