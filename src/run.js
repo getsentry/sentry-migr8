@@ -68,13 +68,13 @@ ${options.filePatterns.join('\n')}
 
   for (const transformer of transformers) {
     const s = spinner();
-    s.start(`Running transformer ${transformer.name}...`);
+    s.start(`Running transformer "${transformer.name}"...`);
 
     try {
       await transformer.transform(files, { ...options, sdk: targetSdk });
-      s.stop(`Transformer ${transformer.name} completed.`);
+      s.stop(`Transformer "${transformer.name}" completed.`);
     } catch (error) {
-      s.stop(`Transformer ${transformer.name} failed to complete with error:`);
+      s.stop(`Transformer "${transformer.name}" failed to complete with error:`);
       // eslint-disable-next-line no-console
       console.error(error);
     }

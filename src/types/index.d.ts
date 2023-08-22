@@ -27,6 +27,7 @@ export type PackageDotJson = {
   scripts?: Record<string, string | undefined>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  workspaces?: string[];
 };
 
 export type NpmPackage = {

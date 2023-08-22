@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "webpack": "5.88.2"
+  },
+  "devDependencies": {
+    "react": "latest"
+  }
+}

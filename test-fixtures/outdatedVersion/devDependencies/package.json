@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "webpack": "5.88.2"
+  },
+  "devDependencies": {
+    "@sentry/react": "~7.54.0",
+    "@sentry/hub": "~7.54.0",
+    "@sentry/tracing": "~7.54.0",
+    "react": "latest"
+  }
+}

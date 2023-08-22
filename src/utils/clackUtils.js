@@ -25,6 +25,7 @@ export async function abortIfCancelled(input) {
 /**
  * Checks if the user is inside a git repository and if there are uncommitted changes.
  * Users can continue in both cases but we want to make sure they know what they're doing.
+ * TODO: Right now, this does not detect it when only new files are added, only if files are modified
  *
  * @returns {Promise<void>}
  */
