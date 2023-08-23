@@ -1,4 +1,9 @@
-const { rewriteEsmImports, rewriteCjsRequires, dedupeImportStatements } = require('../../utils/jscodeshift.cjs');
+const {
+  rewriteEsmImports,
+  rewriteCjsRequires,
+  dedupeImportStatements,
+  hasSentryImportOrRequire,
+} = require('../../utils/jscodeshift.cjs');
 
 const SENTRY_REPLAY_PACKAGE = '@sentry/replay';
 
@@ -15,6 +20,10 @@ const SENTRY_REPLAY_PACKAGE = '@sentry/replay';
  * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
  */
 module.exports = function transform(fileInfo, api, options) {
+  if (!hasSentryImportOrRequire(fileInfo.source, '@sentry/replay')) {
+    return undefined;
+  }
+
   const j = api.jscodeshift;
   const root = j(fileInfo.source, options);
 
