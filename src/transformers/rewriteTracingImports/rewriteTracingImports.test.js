@@ -29,7 +29,7 @@ describe('transformers | rewriteTracingImports', () => {
     assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
-  it('no-ops of no SDK is specified', async () => {
+  it('no-ops if no SDK is specified', async () => {
     tmpDir = makeTmpDir(getFixturePath('tracingAppNodeEsm'));
     await rewriteTracingImports.transform([`${tmpDir}/named-named.mjs`], { filePatterns: [] });
 
