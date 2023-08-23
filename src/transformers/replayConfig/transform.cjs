@@ -1,3 +1,5 @@
+const { hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
+
 /**
  * This transform converts old replay privacy options to their new format.
  * Specifically, it handles these:
@@ -252,9 +254,7 @@ function getSentryInitExpression(j, tree, source) {
   }
 
   // Else try init() - only if the file contains an import for Sentry!
-  const importRegex = /from ['"]@sentry\/(.+)['"]/gim;
-  const requireRegex = /require\(['"]@sentry\/(.+)['"]\)/gim;
-  if (importRegex.test(source) || requireRegex.test(source)) {
+  if (hasSentryImportOrRequire(source)) {
     const b = tree.find(j.CallExpression, { callee: { type: 'Identifier', name: 'Replay' } });
     if (b.size() > 0) {
       return b;

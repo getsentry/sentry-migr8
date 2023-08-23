@@ -60,3 +60,17 @@ needed anymore, and their exports can just be imported from your main SDK packag
 ### Update SDK to latest version
 
 Updates your used SDK to the latest version, and ensures all packages have the same version.
+
+### Next.js Wrapper Methods v7>v8
+
+This migrates deprecated Next.js methods from v7 to v8. This includes:
+
+- `withSentryAPI` → `wrapApiHandlerWithSentry`
+- `withSentryServerSideGetInitialProps` → `wrapGetInitialPropsWithSentry`
+- `withSentryServerSideAppGetInitialProps` → `wrapAppGetInitialPropsWithSentry`
+- `withSentryServerSideDocumentGetInitialProps` → `wrapDocumentGetInitialPropsWithSentry`
+- `withSentryServerSideErrorGetInitialProps` → `wrapErrorGetInitialPropsWithSentry`
+- `withSentryGetServerSideProps` → `wrapGetServerSidePropsWithSentry`
+- `withSentryGetStaticProps` → `wrapGetStaticPropsWithSentry`
+- `withSentry` → `wrapApiWithSentry`
+- `withSentryServerSideAppGetInitialProps` → `wrapAppGetInitialPropsWithSentry`
