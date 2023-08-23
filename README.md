@@ -7,6 +7,8 @@ HACKWEEK PROJECT - Migrate to the next JS SDK version
 - Clone the git project: `git clone git@github.com:getsentry/sentry-migr8.git`
 - Run it in your applications directory: `node ~/path/to/sentry-migr8/src/index.js`
 
+By default we run all transformations on all files in the directory, ignoring any gitignored files.
+
 ### Options
 
 You can run `node ~/path/to/sentry-migr8/src/index.js --help` to get a list of available options.

@@ -1,8 +1,8 @@
 {
   "dependencies": {
-    "webpack": "5.88.2"
+    "is-even": "1.0.0"
   },
   "devDependencies": {
-    "react": "latest"
+    "is-odd": "3.0.1"
   }
 }

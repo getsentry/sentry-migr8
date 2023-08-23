@@ -4,9 +4,10 @@
     "@sentry/hub": "~7.54.0",
     "@sentry/tracing": "~7.54.0",
     "@sentry/replay": "~7.54.0",
-    "react": "latest"
+    "@sentry/integrations": "~7.54.0",
+    "is-even": "1.0.0"
   },
   "devDependencies": {
-    "webpack": "5.88.2"
+    "is-odd": "3.0.1"
   }
 }

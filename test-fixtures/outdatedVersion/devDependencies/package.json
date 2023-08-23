@@ -1,11 +1,12 @@
 {
   "dependencies": {
-    "webpack": "5.88.2"
+    "is-even": "1.0.0",
+    "@sentry/integrations": "~7.54.0"
   },
   "devDependencies": {
     "@sentry/react": "~7.54.0",
     "@sentry/hub": "~7.54.0",
     "@sentry/tracing": "~7.54.0",
-    "react": "latest"
+    "is-odd": "3.0.1"
   }
 }

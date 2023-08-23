@@ -2,7 +2,7 @@ import * as childProcess from 'node:child_process';
 import { promises as fsPromises } from 'node:fs';
 import * as path from 'node:path';
 
-import { cancel, isCancel, confirm } from '@clack/prompts';
+import { cancel, isCancel, confirm, log } from '@clack/prompts';
 
 /**
  * Users can cancel at every input (Cmd+c). Clack returns a symbol for that case which we need to check for.
@@ -155,5 +155,27 @@ export async function getPackageDotJson(cwd) {
     return JSON.parse(packageJsonFileContents);
   } catch {
     return {};
+  }
+}
+
+/**
+ * Show a debug log message if the user has enabled debug mode.
+ * @param {string} message
+ * @param {boolean | undefined} show
+ */
+export function debugLog(message, show) {
+  if (show) {
+    log.info(`[Debug] ${message}`);
+  }
+}
+
+/**
+ * Show a debug error message if the user has enabled debug mode.
+ * @param {string} message
+ * @param {boolean | undefined} show
+ */
+export function debugError(message, show) {
+  if (show) {
+    log.error(`[Debug] ${message}`);
   }
 }

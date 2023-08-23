@@ -40,10 +40,10 @@ describe('transformers | sdkLatestVersion', () => {
       actual,
       `{
   "dependencies": {
-    "webpack": "5.88.2"
+    "is-even": "1.0.0"
   },
   "devDependencies": {
-    "react": "latest"
+    "is-odd": "3.0.1"
   }
 }`
     );
@@ -73,11 +73,12 @@ describe('transformers | sdkLatestVersion', () => {
       actual,
       `{
   "dependencies": {
+    "@sentry/integrations": "^${latestVersion}",
     "@sentry/react": "^${latestVersion}",
-    "react": "latest"
+    "is-even": "1.0.0"
   },
   "devDependencies": {
-    "webpack": "5.88.2"
+    "is-odd": "3.0.1"
   }
 }`
     );
@@ -86,18 +87,19 @@ describe('transformers | sdkLatestVersion', () => {
   it('works with devDependencies', async () => {
     tmpDir = makeTmpDir(getFixturePath('outdatedVersion'));
     const cwd = `${tmpDir}/devDependencies`;
-    await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd, sdk: '@sentry/react' });
+    await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
     assertStringEquals(
       actual,
       `{
   "dependencies": {
-    "webpack": "5.88.2"
+    "@sentry/integrations": "^${latestVersion}",
+    "is-even": "1.0.0"
   },
   "devDependencies": {
     "@sentry/react": "^${latestVersion}",
-    "react": "latest"
+    "is-odd": "3.0.1"
   }
 }`
     );
@@ -106,18 +108,19 @@ describe('transformers | sdkLatestVersion', () => {
   it('works with yarn', async () => {
     tmpDir = makeTmpDir(getFixturePath('outdatedVersion'));
     const cwd = `${tmpDir}/withYarn`;
-    await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd, sdk: '@sentry/react' });
+    await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
     assertStringEquals(
       actual,
       `{
   "dependencies": {
+    "@sentry/integrations": "^${latestVersion}",
     "@sentry/react": "^${latestVersion}",
-    "react": "latest"
+    "is-even": "1.0.0"
   },
   "devDependencies": {
-    "webpack": "5.88.2"
+    "is-odd": "3.0.1"
   }
 }`
     );
@@ -126,18 +129,19 @@ describe('transformers | sdkLatestVersion', () => {
   it('works with pnpm', async () => {
     tmpDir = makeTmpDir(getFixturePath('outdatedVersion'));
     const cwd = `${tmpDir}/withPnpm`;
-    await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd, sdk: '@sentry/react' });
+    await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
     assertStringEquals(
       actual,
       `{
   "dependencies": {
+    "@sentry/integrations": "~${latestVersion}",
     "@sentry/react": "~${latestVersion}",
-    "react": "latest"
+    "is-even": "1.0.0"
   },
   "devDependencies": {
-    "webpack": "5.88.2"
+    "is-odd": "3.0.1"
   }
 }`
     );

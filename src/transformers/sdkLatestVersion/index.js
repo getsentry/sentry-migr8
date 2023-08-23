@@ -4,7 +4,9 @@ import { execSync } from 'node:child_process';
 
 import { log } from '@clack/prompts';
 
-import { getPackageDotJson } from '../../utils/clackUtils.js';
+import { getPackageDotJson, debugLog, debugError } from '../../utils/clackUtils.js';
+
+const PACKAGES_TO_REMOVE = ['@sentry/tracing', '@sentry/replay', '@sentry/hub'];
 
 /**
  * @type {import('types').Transformer}
@@ -28,23 +30,51 @@ export default {
       return;
     }
 
-    if (!hasSentryDependency({ ...packageJSON.dependencies, ...packageJSON.devDependencies })) {
+    const dependencies = Object.keys(packageJSON.dependencies || {});
+    const devDependencies = Object.keys(packageJSON.devDependencies || {});
+
+    const allDependencies = [...dependencies, ...devDependencies];
+
+    const toRemove = allDependencies.filter(dep => PACKAGES_TO_REMOVE.includes(dep));
+    const toUpdateDep = dependencies.filter(dep => !PACKAGES_TO_REMOVE.includes(dep) && dep.startsWith('@sentry/'));
+    const toUpdateDevDep = devDependencies.filter(
+      dep => !PACKAGES_TO_REMOVE.includes(dep) && dep.startsWith('@sentry/')
+    );
+
+    if (!toRemove.length && !toUpdateDep.length && !toUpdateDevDep.length) {
+      debugLog('No SDK dependencies found, skipping...', options.debug);
       return;
     }
 
     try {
-      execSync(`${packageAPI.remove} @sentry/tracing @sentry/replay @sentry/hub`, {
-        stdio: 'ignore',
-        cwd,
-      });
+      if (toRemove.length > 0) {
+        const removeCommand = `${packageAPI.remove} ${toRemove.join(' ')}`;
+        debugLog(`Running:  ${removeCommand}`, options.debug);
+        execSync(removeCommand, {
+          stdio: 'ignore',
+          cwd,
+        });
+      }
 
-      if (options.sdk) {
-        execSync(packageAPI.add(`${options.sdk}@latest`), {
+      if (toUpdateDep.length > 0) {
+        const addCommand = packageAPI.add(toUpdateDep.map(dep => `${dep}@latest`).join(' '), false);
+        debugLog(`Running:  ${addCommand}`, options.debug);
+        execSync(addCommand, {
+          cwd,
+          stdio: 'ignore',
+        });
+      }
+
+      if (toUpdateDevDep.length > 0) {
+        const addCommand = packageAPI.add(toUpdateDevDep.map(dep => `${dep}@latest`).join(' '), true);
+        debugLog(`Running:  ${addCommand}`, options.debug);
+        execSync(addCommand, {
           cwd,
           stdio: 'ignore',
         });
       }
     } catch (e) {
+      debugError(`Error while updating SDK: ${e}`, options.debug);
       // ignore errors?
     }
   },
@@ -54,19 +84,19 @@ const YARN_LOCK = 'yarn.lock';
 const PNPM_LOCK = 'pnpm-lock.yaml';
 
 /**
- * @type {Record<'yarn'|'npm'|'pnpm', {add: (packages: string) => string, remove: string}>}
+ * @type {Record<'yarn'|'npm'|'pnpm', {add: (packages: string, isDevDep: boolean) => string, remove: string}>}
  */
 const PACKAGE_MANAGER_APIS = {
   yarn: {
-    add: packages => `yarn add ${packages} --caret`,
+    add: (packages, isDevDep) => `yarn add ${packages} --caret${isDevDep ? ' --dev' : ''}`,
     remove: 'yarn remove',
   },
   pnpm: {
-    add: packages => `pnpm add ${packages}`,
+    add: (packages, isDevDep) => `pnpm add ${packages}${isDevDep ? ' --save-dev' : ''}`,
     remove: 'pnpm remove',
   },
   npm: {
-    add: packages => `npm install ${packages} --caret`,
+    add: (packages, isDevDep) => `npm install ${packages} --caret${isDevDep ? ' --save-dev' : ''}`,
     remove: 'npm uninstall',
   },
 };
@@ -74,7 +104,7 @@ const PACKAGE_MANAGER_APIS = {
 /**
  *
  * @param {string} cwd
- * @returns {{add: (packages: string) => string, remove: string}}
+ * @returns {{add: (packages: string, isDevDep: boolean) => string, remove: string}}
  */
 function getPackageManagerAPI(cwd) {
   const packageManager = detectPackageManager(cwd);
@@ -96,13 +126,4 @@ function detectPackageManager(cwd) {
   }
 
   return 'npm';
-}
-
-/**
- *
- * @param {Record<string, string>} deps
- * @returns {boolean}
- */
-function hasSentryDependency(deps) {
-  return Object.keys(deps).some(dep => dep.startsWith('@sentry/'));
 }
