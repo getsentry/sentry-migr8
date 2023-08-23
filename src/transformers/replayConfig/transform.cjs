@@ -1,4 +1,4 @@
-const { hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
+const { getSentryInitExpression } = require('../../utils/jscodeshift.cjs');
 
 /**
  * This transform converts old replay privacy options to their new format.
@@ -231,34 +231,6 @@ function getReplayNewExpression(j, tree) {
   const b = tree.find(j.NewExpression, { callee: { name: 'Replay' } });
   if (b.size() > 0) {
     return b;
-  }
-
-  return undefined;
-}
-
-/**
- *
- * @param {import('jscodeshift')} j
- * @param {import('jscodeshift').Collection} tree
- * @param {string} source
- * @returns {undefined | import('jscodeshift').Collection<import('jscodeshift').CallExpression>}
- */
-function getSentryInitExpression(j, tree, source) {
-  // First try to find Sentry.init()
-  const a = tree.find(j.CallExpression, {
-    callee: { type: 'MemberExpression', object: { name: 'Sentry' }, property: { name: 'init' } },
-  });
-
-  if (a.size() > 0) {
-    return a;
-  }
-
-  // Else try init() - only if the file contains an import for Sentry!
-  if (hasSentryImportOrRequire(source)) {
-    const b = tree.find(j.CallExpression, { callee: { type: 'Identifier', name: 'Replay' } });
-    if (b.size() > 0) {
-      return b;
-    }
   }
 
   return undefined;

@@ -29,20 +29,16 @@ describe('transformers | replayConfig', () => {
     assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
-  it('works with example files', async () => {
+  it('works with imports', async () => {
     tmpDir = makeTmpDir(getFixturePath('replayApp'));
-    await replayConfigTransformer.transform([tmpDir], { filePatterns: [] });
+    const file = 'myReactApp.js';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
 
-    const actual1 = getDirFileContent(tmpDir, 'myReactApp.js');
-    const actual2 = getDirFileContent(tmpDir, 'myReactApp.ts');
-    const actual3 = getDirFileContent(tmpDir, 'myReactApp.tsx');
-    const actual4 = getDirFileContent(tmpDir, 'upToDateConfig.js');
-    const actual5 = getDirFileContent(tmpDir, 'oldSampleRates.js');
-    const actual6 = getDirFileContent(tmpDir, 'oldSampleRatesSeparateFile.js');
-    const actual7 = getDirFileContent(tmpDir, 'withRequire.js');
+    const actual = getDirFileContent(tmpDir, file);
 
     assertStringEquals(
-      actual1,
+      actual,
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -67,8 +63,18 @@ Sentry.init({
   replaysOnErrorSampleRate: 0.75
 });`
     );
+  });
+
+  it('works with typescript', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'myReactApp.ts';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
     assertStringEquals(
-      actual2,
+      actual,
       `import * as Sentry from '@sentry/react';
 
 const Replay = Sentry.Replay as any;
@@ -85,9 +91,18 @@ Sentry.init({
   replaysOnErrorSampleRate: 0.75
 });`
     );
+  });
+
+  it('works with tsx', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'myReactApp.tsx';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
 
     assertStringEquals(
-      actual3,
+      actual,
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -106,9 +121,18 @@ function myTsx() {
   );
 }`
     );
+  });
+
+  it('works with up to date config', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'upToDateConfig.js';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
 
     assertStringEquals(
-      actual4,
+      actual,
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -122,9 +146,18 @@ Sentry.init({
   ],
 });`
     );
+  });
+
+  it('works with old sample rates', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'oldSampleRates.js';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
 
     assertStringEquals(
-      actual5,
+      actual,
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -136,9 +169,18 @@ Sentry.init({
   replaysOnErrorSampleRate: 0.75
 });`
     );
+  });
+
+  it('works with old sample rates in separate file', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'oldSampleRatesSeparateFile.js';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
 
     assertStringEquals(
-      actual6,
+      actual,
       `import * as Sentry from '@sentry/react';
 
 const replay = new Sentry.Replay({
@@ -147,13 +189,59 @@ const replay = new Sentry.Replay({
   block: [".my-block-class"]
 });`
     );
+  });
+
+  it('works with require', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'withRequire.js';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
     assertStringEquals(
-      actual7,
+      actual,
       `const Sentry = require('@sentry/react');
 
 Sentry.init({
   integrations: [
     new Sentry.Replay({
+      maskInputOptions: { email: true, text: false },
+      other: "other",
+
+      block: [
+        '.existing-block',
+        ".my-blocks-selector",
+        "[my-block-attr]",
+        ".my-block-class"
+      ],
+
+      ignore: [".my-ignore-class"],
+      mask: [".my-mask-text-class", ".my-mask-text-selector", "[my-mask-text-attr]"]
+    }),
+  ],
+
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 0.75
+});`
+    );
+  });
+
+  it('works with specific imports', async () => {
+    tmpDir = makeTmpDir(getFixturePath('replayApp'));
+    const file = 'specificImports.js';
+    const files = [`${tmpDir}/${file}`];
+    await replayConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `import {init, Replay} from '@sentry/react';
+
+init({
+  integrations: [
+    new Replay({
       maskInputOptions: { email: true, text: false },
       other: "other",
 

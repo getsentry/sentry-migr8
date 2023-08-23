@@ -18,6 +18,34 @@ function hasSentryImportOrRequire(source, packageName = '@sentry/(.+)') {
 }
 
 /**
+ *
+ * @param {import('jscodeshift')} j
+ * @param {import('jscodeshift').Collection} tree
+ * @param {string} source
+ * @returns {undefined | import('jscodeshift').Collection<import('jscodeshift').CallExpression>}
+ */
+function getSentryInitExpression(j, tree, source) {
+  // First try to find Sentry.init()
+  const a = tree.find(j.CallExpression, {
+    callee: { type: 'MemberExpression', object: { name: 'Sentry' }, property: { name: 'init' } },
+  });
+
+  if (a.size() > 0) {
+    return a;
+  }
+
+  // Else try init() - only if the file contains an import for Sentry!
+  if (hasSentryImportOrRequire(source)) {
+    const b = tree.find(j.CallExpression, { callee: { type: 'Identifier', name: 'init' } });
+    if (b.size() > 0) {
+      return b;
+    }
+  }
+
+  return undefined;
+}
+
+/**
  * Replaces `require("@sentry/<oldPackage>")` with `require("@sentry/<newPackage>")`
  *
  * @param {string} oldPackage the name of the old package
@@ -177,4 +205,5 @@ module.exports = {
   rewriteCjsRequires,
   rewriteEsmImports,
   dedupeImportStatements,
+  getSentryInitExpression,
 };
