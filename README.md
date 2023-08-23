@@ -86,3 +86,11 @@ but only a few that have been deprecated:
 ### Tracing Config v7>v8
 
 Rewrites `tracePropagationTargets` and `tracingOrigins` from Integration-level config to root config on `Sentry.init()`.
+
+### 'Util Exports v7>v8
+
+Rewrites some old exports from `@sentry/utils` to their newer formats:
+
+- `severityFromString` → `severityLevelFromString`
+- `getGlobalObject()` → `GLOBAL_OBJ`
+- `timestampWithMs` → `timestampInSeconds`

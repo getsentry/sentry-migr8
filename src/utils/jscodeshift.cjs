@@ -200,10 +200,154 @@ function requiresOldPackage(path, oldPackageName) {
   return args.length === 1 && args[0].type === 'StringLiteral' && args[0].value === oldPackageName;
 }
 
+/**
+ * @param {import('jscodeshift').JSCodeshift} j
+ * @param {import('jscodeshift').Collection} tree
+ * @param {string} source
+ * @param {string} packageName
+ * @param {Map<string, string>} functionMap
+ * @returns {boolean} True if it has replaced, else false
+ */
+function replaceFunctionCalls(j, tree, source, packageName, functionMap) {
+  // If the file has no @sentry/nextjs import, nothing to do
+  if (!hasSentryImportOrRequire(source, packageName)) {
+    return false;
+  }
+
+  // Replace e.g. `severityFromString()` with `severityLevelFromString()`
+  tree.find(j.CallExpression).forEach(path => {
+    if (path.value.callee.type !== 'Identifier') {
+      return;
+    }
+
+    const orig = path.value.callee.name;
+
+    const replacement = functionMap.get(orig);
+
+    if (replacement) {
+      path.value.callee.name = replacement;
+    }
+  });
+
+  // Replace e.g. `SentryUtuils.severityFromString()` with `SentryUtils.severityFromString()`
+  tree.find(j.MemberExpression).forEach(path => {
+    if (path.value.property.type !== 'Identifier') {
+      return;
+    }
+
+    const orig = path.value.property.name;
+
+    const replacement = functionMap.get(orig);
+
+    if (replacement) {
+      path.value.property.name = replacement;
+    }
+  });
+
+  // Replace in import/require statements
+  replaceImported(j, tree, source, packageName, functionMap);
+
+  return true;
+}
+
+/**
+ * Replace the names of imported/required properties, e.g. import {this,that} from 'package';
+ *
+ * @param {import('jscodeshift').JSCodeshift} j
+ * @param {import('jscodeshift').Collection} tree
+ * @param {string} source
+ * @param {string} packageName
+ * @param {Map<string, string>} importMap
+ * @returns {boolean} True if it has replaced, else false
+ */
+function replaceImported(j, tree, source, packageName, importMap) {
+  // If the file has no @sentry/nextjs import, nothing to do
+  if (!hasSentryImportOrRequire(source, packageName)) {
+    return false;
+  }
+
+  // Replace imports of old APIs
+  tree.find(j.ImportDeclaration, { source: { type: 'StringLiteral', value: packageName } }).forEach(path => {
+    path.value.specifiers?.forEach(specifier => {
+      if (specifier.type !== 'ImportSpecifier') {
+        return;
+      }
+
+      const origImported = specifier.imported.name;
+      const replacementImported = importMap.get(origImported);
+
+      if (replacementImported) {
+        specifier.imported.name = replacementImported;
+      }
+
+      // Also rewrite the local import, but only if it is the same
+      if (specifier.local) {
+        const origLocal = specifier.local.name;
+        const replacementLocal = importMap.get(origLocal);
+
+        if (replacementLocal) {
+          specifier.local.name = replacementLocal;
+        }
+      }
+    });
+  });
+
+  // Replace require of old APIs
+  tree
+    .find(j.VariableDeclaration, {
+      declarations: [
+        {
+          type: 'VariableDeclarator',
+          init: {
+            type: 'CallExpression',
+            callee: { type: 'Identifier', name: 'require' },
+            arguments: [{ value: packageName }],
+          },
+        },
+      ],
+    })
+    .forEach(path => {
+      if (
+        path.value.declarations[0].type === 'VariableDeclarator' &&
+        path.value.declarations[0].id.type === 'ObjectPattern'
+      ) {
+        const requireVars = path.value.declarations[0].id;
+
+        requireVars.properties.forEach(property => {
+          if (property.type !== 'ObjectProperty') {
+            return;
+          }
+
+          // This is what is imported, e.g. const {x} = Sentry;
+          if (property.key.type === 'Identifier') {
+            const origValue = property.key.name;
+            const replacementValue = importMap.get(origValue);
+            if (replacementValue) {
+              property.key.name = replacementValue;
+            }
+          }
+
+          // This is what it is imported as, e.g. const {x: y} = Sentry;
+          if (property.value.type === 'Identifier') {
+            const origValue = property.value.name;
+            const replacementValue = importMap.get(origValue);
+            if (replacementValue) {
+              property.value.name = replacementValue;
+            }
+          }
+        });
+      }
+    });
+
+  return true;
+}
+
 module.exports = {
   hasSentryImportOrRequire,
   rewriteCjsRequires,
   rewriteEsmImports,
   dedupeImportStatements,
   getSentryInitExpression,
+  replaceFunctionCalls,
+  replaceImported,
 };
