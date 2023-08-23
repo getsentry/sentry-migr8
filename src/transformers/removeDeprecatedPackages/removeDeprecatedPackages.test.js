@@ -1,16 +1,14 @@
 import { afterEach, describe, it } from 'node:test';
 import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
 import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import sdkLatestVersionTransformer from './index.js';
 
-describe('transformers | sdkLatestVersion', () => {
+describe('transformers | removeDeprecatedPackages', () => {
   let tmpDir = '';
-  const latestVersion = execSync('npm show @sentry/browser version').toString().trim();
 
   afterEach(() => {
     if (tmpDir) {
@@ -20,7 +18,7 @@ describe('transformers | sdkLatestVersion', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(sdkLatestVersionTransformer.name, 'Update SDK to latest version');
+    assert.equal(sdkLatestVersionTransformer.name, 'Remove deprecated packages');
   });
 
   it('works with app without Sentry', async () => {
@@ -73,11 +71,8 @@ describe('transformers | sdkLatestVersion', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/hub": "^${latestVersion}",
-    "@sentry/integrations": "^${latestVersion}",
-    "@sentry/react": "^${latestVersion}",
-    "@sentry/replay": "^${latestVersion}",
-    "@sentry/tracing": "^${latestVersion}",
+    "@sentry/integrations": "~7.54.0",
+    "@sentry/react": "~7.54.0",
     "is-even": "1.0.0"
   },
   "devDependencies": {
@@ -97,13 +92,11 @@ describe('transformers | sdkLatestVersion', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/integrations": "^${latestVersion}",
+    "@sentry/integrations": "~7.54.0",
     "is-even": "1.0.0"
   },
   "devDependencies": {
-    "@sentry/hub": "^${latestVersion}",
-    "@sentry/react": "^${latestVersion}",
-    "@sentry/tracing": "^${latestVersion}",
+    "@sentry/react": "~7.54.0",
     "is-odd": "3.0.1"
   }
 }`
@@ -120,10 +113,8 @@ describe('transformers | sdkLatestVersion', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/hub": "^${latestVersion}",
-    "@sentry/integrations": "^${latestVersion}",
-    "@sentry/react": "^${latestVersion}",
-    "@sentry/replay": "^${latestVersion}",
+    "@sentry/integrations": "~7.54.0",
+    "@sentry/react": "~7.54.0",
     "is-even": "1.0.0"
   },
   "devDependencies": {
@@ -143,10 +134,8 @@ describe('transformers | sdkLatestVersion', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/hub": "~${latestVersion}",
-    "@sentry/integrations": "~${latestVersion}",
-    "@sentry/react": "~${latestVersion}",
-    "@sentry/replay": "~${latestVersion}",
+    "@sentry/integrations": "~7.54.0",
+    "@sentry/react": "~7.54.0",
     "is-even": "1.0.0"
   },
   "devDependencies": {

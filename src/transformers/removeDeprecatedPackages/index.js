@@ -5,11 +5,13 @@ import { log } from '@clack/prompts';
 import { getPackageDotJson, debugLog, debugError } from '../../utils/clackUtils.js';
 import { getPackageManagerAPI } from '../../utils/packageManager.js';
 
+const PACKAGES_TO_REMOVE = ['@sentry/tracing', '@sentry/replay', '@sentry/hub'];
+
 /**
  * @type {import('types').Transformer}
  */
 export default {
-  name: 'Update SDK to latest version',
+  name: 'Remove deprecated packages',
   transform: async (files, options) => {
     const cwd = options.cwd ?? process.cwd();
     const packageAPI = getPackageManagerAPI(cwd);
@@ -30,34 +32,24 @@ export default {
     const dependencies = Object.keys(packageJSON.dependencies || {});
     const devDependencies = Object.keys(packageJSON.devDependencies || {});
 
-    const toUpdateDep = dependencies.filter(dep => dep.startsWith('@sentry/'));
-    const toUpdateDevDep = devDependencies.filter(dep => dep.startsWith('@sentry/'));
+    const allDependencies = [...dependencies, ...devDependencies];
 
-    if (!toUpdateDep.length && !toUpdateDevDep.length) {
-      debugLog('No SDK dependencies found, skipping...', options.debug);
+    const toRemove = allDependencies.filter(dep => PACKAGES_TO_REMOVE.includes(dep));
+
+    if (!toRemove.length) {
+      debugLog('No package to remove found, skipping...', options.debug);
       return;
     }
 
     try {
-      if (toUpdateDep.length > 0) {
-        const addCommand = packageAPI.add(toUpdateDep.map(dep => `${dep}@latest`).join(' '), false);
-        debugLog(`Running:  ${addCommand}`, options.debug);
-        execSync(addCommand, {
-          cwd,
-          stdio: 'ignore',
-        });
-      }
-
-      if (toUpdateDevDep.length > 0) {
-        const addCommand = packageAPI.add(toUpdateDevDep.map(dep => `${dep}@latest`).join(' '), true);
-        debugLog(`Running:  ${addCommand}`, options.debug);
-        execSync(addCommand, {
-          cwd,
-          stdio: 'ignore',
-        });
-      }
+      const removeCommand = `${packageAPI.remove} ${toRemove.join(' ')}`;
+      debugLog(`Running:  ${removeCommand}`, options.debug);
+      execSync(removeCommand, {
+        stdio: 'ignore',
+        cwd,
+      });
     } catch (e) {
-      debugError(`Error while updating SDK: ${e}`, options.debug);
+      debugError(`Error while removing packages: ${e}`, options.debug);
       // ignore errors?
     }
   },
