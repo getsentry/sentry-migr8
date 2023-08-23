@@ -71,7 +71,7 @@ function requiresTracing(path) {
  * @returns {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} an array of tracing import declarations
  */
 function rewriteEsmImports(root, j, options) {
-  /** { @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} */
+  /** @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} */
   let tracingImportPaths = [];
   root
     .find(j.ImportDeclaration)
