@@ -74,3 +74,11 @@ This migrates deprecated Next.js methods from v7 to v8. This includes:
 - `withSentryGetStaticProps` → `wrapGetStaticPropsWithSentry`
 - `withSentry` → `wrapApiWithSentry`
 - `withSentryServerSideAppGetInitialProps` → `wrapAppGetInitialPropsWithSentry`
+
+### Node Handler Utils v7>v8
+
+Rewrite moved utility functions from `Sentry.Handlers.xxx`. Note that this does not migrate _all_ methods on `Handlers`,
+but only a few that have been deprecated:
+
+- `Handlers.ExpressRequest` → `PolymorphicRequest` (Type export)
+- `Handlers.extractRequestData` → `extractRequestData`
