@@ -45,19 +45,19 @@ function rewriteCjsRequires(oldPackage, newPackage, root, j) {
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
  *
- * @returns {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} an array of tracing import declarations
+ * @returns {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} an array of old import import declarations
  */
 function rewriteEsmImports(oldPackage, newPackage, root, j) {
   /** @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} */
-  let tracingImportPaths = [];
+  let oldImportPaths = [];
   root
     .find(j.ImportDeclaration)
     .filter(path => path.node.source.value === oldPackage)
     .forEach(path => {
       path.node.source.value = newPackage;
-      tracingImportPaths.push(path);
+      oldImportPaths.push(path);
     });
-  return tracingImportPaths;
+  return oldImportPaths;
 }
 
 /**
@@ -67,11 +67,11 @@ function rewriteEsmImports(oldPackage, newPackage, root, j) {
  * the SDK package, which is also fine.
  *
  * @param {string} sdkPackage
- * @param {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} tracingImportPaths
+ * @param {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} oldPackageImportPaths
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
  */
-function dedupeImportStatements(sdkPackage, tracingImportPaths, root, j) {
+function dedupeImportStatements(sdkPackage, oldPackageImportPaths, root, j) {
   const sdkImports = root.find(j.ImportDeclaration).filter(path => path.node.source.value === sdkPackage);
 
   const hasSdkNamespaceImport = sdkImports.find(j.ImportNamespaceSpecifier).length > 0;
@@ -80,10 +80,10 @@ function dedupeImportStatements(sdkPackage, tracingImportPaths, root, j) {
     const sdkNameSpace = sdkImports.find(j.ImportNamespaceSpecifier).find(j.Identifier).nodes()[0].name;
     // case 1: SDK import is a namespace import
     // e.g. import * as Sentry from '@sentry/browser';
-    // Replace the tracing import by adding the SDK namespace to the identifiers imported from tracing
-    tracingImportPaths.forEach(tracingImportPath => {
-      // case 1a: Tracing import is a named import (e.g. import { BrowserTracing } from '@sentry/tracing')
-      j(tracingImportPath)
+    // Replace the formerly old package imports by adding the identifiers imported from the old package import to the SDK import
+    oldPackageImportPaths.forEach(oldPackageImportPath => {
+      // case 1a: Old package import is a named import (e.g. import { BrowserTracing } from '@sentry/tracing')
+      j(oldPackageImportPath)
         .find(j.ImportSpecifier)
         .filter(
           // for local name changes (e.g. import { BrowserTracing as Whatever } from '@sentry/tracing') we just bail
@@ -94,28 +94,28 @@ function dedupeImportStatements(sdkPackage, tracingImportPaths, root, j) {
           root.find(j.Identifier, { name: id }).forEach(idPath => {
             idPath.replace(j.memberExpression(j.identifier(sdkNameSpace), j.identifier(id)));
           });
-          tracingImportPath.replace(undefined);
+          oldPackageImportPath.replace(undefined);
         });
 
-      // case 1b: Tracing import is a namespace import (e.g. import * as Tracing from '@sentry/tracing')
-      j(tracingImportPath)
+      // case 1b: Old package import is a namespace import (e.g. import * as Tracing from '@sentry/tracing')
+      j(oldPackageImportPath)
         .filter(t => t.node.specifiers?.length === 1)
         .find(j.ImportNamespaceSpecifier)
         .forEach(specifier => {
-          const tracingNamespace = specifier.node.name?.name || specifier.node.local?.name;
-          if (!tracingNamespace) {
+          const oldPackageNamespace = specifier.node.name?.name || specifier.node.local?.name;
+          if (!oldPackageNamespace) {
             return;
           }
 
           root
-            .find(j.Identifier, { name: tracingNamespace })
+            .find(j.Identifier, { name: oldPackageNamespace })
             .filter(p => {
               const parentType = p.parent.node.type;
               return parentType === 'MemberExpression' || parentType === 'TSQualifiedName';
             })
             .forEach(idPath => {
               idPath.replace(j.identifier(sdkNameSpace));
-              tracingImportPath.replace(undefined);
+              oldPackageImportPath.replace(undefined);
             });
         });
     });
@@ -133,20 +133,20 @@ function dedupeImportStatements(sdkPackage, tracingImportPaths, root, j) {
   if (sdkImportDeclarationWithNamedImportSpecifier) {
     // case 2: SDK import has named import specifier
     // e.g. import { init } from '@sentry/react';
-    tracingImportPaths.forEach(tracingImportPath => {
-      const tracingImport = tracingImportPath.node;
-      const isNamespaceTracingImport =
-        tracingImport.specifiers?.length === 1 && tracingImport.specifiers[0].type === 'ImportNamespaceSpecifier';
+    oldPackageImportPaths.forEach(oldPackageImportPath => {
+      const oldPackageImport = oldPackageImportPath.node;
+      const isNamespaceOldPackageImport =
+        oldPackageImport.specifiers?.length === 1 && oldPackageImport.specifiers[0].type === 'ImportNamespaceSpecifier';
 
-      // Case 2a: Tracing import is not a namespace import
+      // Case 2a: Old package import is not a namespace import
       // e.g. import { BrowserTracing } from '@sentry/tracing';
-      // Replace the import declaration with the tracing import
-      if (!isNamespaceTracingImport) {
-        tracingImport.specifiers?.forEach(specifier => {
+      // Replace the import declaration with adding the old package identifiers to the SDK import
+      if (!isNamespaceOldPackageImport) {
+        oldPackageImport.specifiers?.forEach(specifier => {
           sdkImportDeclarationWithNamedImportSpecifier.specifiers?.push(specifier);
         });
 
-        tracingImportPath.replace(undefined);
+        oldPackageImportPath.replace(undefined);
       }
     });
   }
