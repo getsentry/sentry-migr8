@@ -19,6 +19,8 @@ export const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/node',
 ];
 
+const SERVER_SDKS = ['@sentry/node', '@sentry/serverless'];
+
 /**
  * Checks if @param packageJson has any of the @param packageNamesList package names
  * listed as a dependency or devDependency.
@@ -49,6 +51,15 @@ export function findInstalledPackageFromList(packageNamesList, packageJson) {
  */
 export function hasPackageInstalled(packageName, packageJson) {
   return getPackageVersion(packageName, packageJson) !== undefined;
+}
+
+/**
+ * Checks if the passed name is a server SDK.
+ * @param {string} sdkName name of the SDk package to be checked
+ * @returns {boolean}
+ */
+export function isServerSdk(sdkName) {
+  return SERVER_SDKS.includes(sdkName);
 }
 
 /**

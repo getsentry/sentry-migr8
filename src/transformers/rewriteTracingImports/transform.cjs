@@ -1,3 +1,5 @@
+const SENTRY_TRACING_PACKAGE = '@sentry/tracing';
+
 /**
  *
  * @param {import('jscodeshift').FileInfo} fileInfo
@@ -9,14 +11,14 @@ module.exports = function transform(fileInfo, api, options) {
   const root = j(fileInfo.source, options);
 
   // 1. Replace tracing import with SDK import
-  let tracingImportPaths = rewriteEsmImports(root, j, options);
+  let tracingImportPaths = rewriteEsmImports(SENTRY_TRACING_PACKAGE, options.sentry.sdk, root, j);
 
   // 2. Dedupe imports
   if (tracingImportPaths.length > 0) {
-    dedupeImportStatements(root, j, options, tracingImportPaths);
+    dedupeImportStatements(options.sentry.sdk, tracingImportPaths, root, j);
   }
 
-  rewriteCjsRequires(root, j, options);
+  rewriteCjsRequires(SENTRY_TRACING_PACKAGE, options.sentry.sdk, root, j);
 
   // TODO: dedupe requires. We can do it but for now I'm gonna skip it.
   //       ending up with duplicated requires/imports is not the end of the world.
@@ -25,59 +27,43 @@ module.exports = function transform(fileInfo, api, options) {
 };
 
 /**
- * Replaces `require("@sentry/tracing")` with `require("@sentry/<SDK>")`
+ * Replaces `require("@sentry/<oldPackage>")` with `require("@sentry/<newPackage>")`
  *
+ * @param {string} oldPackage the name of the old package
+ * @param {string} newPackage the name of the new package
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
- * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
  */
-function rewriteCjsRequires(root, j, options) {
+function rewriteCjsRequires(oldPackage, newPackage, root, j) {
   root
     .find(j.CallExpression)
-    .filter(path => isCjsRequireCall(path) && requiresTracing(path))
+    .filter(path => isCjsRequireCall(path) && requiresOldPackage(path, oldPackage))
     .forEach(path => {
       const firstArg = path.node.arguments[0];
       if (firstArg.type === 'StringLiteral') {
-        firstArg.value = options.sentry.sdk;
+        firstArg.value = newPackage;
       }
     });
 }
 
 /**
+ * Replaces import syntax `from "<oldPackage>"` with `from "<newPackage>"`
  *
- * @param {import('jscodeshift').ASTPath<import('jscodeshift').CallExpression>} path
- * @returns {boolean}
- */
-function isCjsRequireCall(path) {
-  return path.node.callee.type === 'Identifier' && path.node.callee.name === 'require';
-}
-
-/**
- *
- * @param {import('jscodeshift').ASTPath<import('jscodeshift').CallExpression>} path
- * @returns {boolean}
- */
-function requiresTracing(path) {
-  const args = path.node.arguments;
-  return args.length === 1 && args[0].type === 'StringLiteral' && args[0].value === '@sentry/tracing';
-}
-
-/**
- * Replaces `from "@sentry/tracing"` with `from "@sentry/<SDK>"`
- *
+ * @param {string} oldPackage the name of the old package
+ * @param {string} newPackage the name of the new package
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
- * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
+ *
  * @returns {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} an array of tracing import declarations
  */
-function rewriteEsmImports(root, j, options) {
+function rewriteEsmImports(oldPackage, newPackage, root, j) {
   /** @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} */
   let tracingImportPaths = [];
   root
     .find(j.ImportDeclaration)
-    .filter(path => path.node.source.value === '@sentry/tracing')
+    .filter(path => path.node.source.value === oldPackage)
     .forEach(path => {
-      path.node.source.value = options.sentry.sdk;
+      path.node.source.value = newPackage;
       tracingImportPaths.push(path);
     });
   return tracingImportPaths;
@@ -89,13 +75,13 @@ function rewriteEsmImports(root, j, options) {
  * If we don't dedupe, users are left with potentially two or more import statements from
  * the SDK package, which is also fine.
  *
+ * @param {string} sdkPackage
+ * @param {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} tracingImportPaths
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
- * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
- * @param {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} tracingImportPaths
  */
-function dedupeImportStatements(root, j, options, tracingImportPaths) {
-  const sdkImports = root.find(j.ImportDeclaration).filter(path => path.node.source.value === options.sentry.sdk);
+function dedupeImportStatements(sdkPackage, tracingImportPaths, root, j) {
+  const sdkImports = root.find(j.ImportDeclaration).filter(path => path.node.source.value === sdkPackage);
 
   const hasSdkNamespaceImport = sdkImports.find(j.ImportNamespaceSpecifier).length > 0;
 
@@ -173,4 +159,24 @@ function dedupeImportStatements(root, j, options, tracingImportPaths) {
       }
     });
   }
+}
+
+/**
+ *
+ * @param {import('jscodeshift').ASTPath<import('jscodeshift').CallExpression>} path
+ * @returns {boolean}
+ */
+function isCjsRequireCall(path) {
+  return path.node.callee.type === 'Identifier' && path.node.callee.name === 'require';
+}
+
+/**
+ *
+ * @param {import('jscodeshift').ASTPath<import('jscodeshift').CallExpression>} path
+ * @param {string} oldPackageName
+ * @returns {boolean}
+ */
+function requiresOldPackage(path, oldPackageName) {
+  const args = path.node.arguments;
+  return args.length === 1 && args[0].type === 'StringLiteral' && args[0].value === oldPackageName;
 }
