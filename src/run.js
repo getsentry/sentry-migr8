@@ -5,7 +5,7 @@ import { globby } from 'globby';
 import chalk from 'chalk';
 
 import { getTransformers } from './utils/getTransformers.js';
-import { abortIfCancelled, checkGitStatus, getPackageDotJson } from './utils/clackUtils.js';
+import { abortIfCancelled, checkGitStatus, checkIsInWorkspace, getPackageDotJson } from './utils/clackUtils.js';
 import { SENTRY_SDK_PACKAGE_NAMES, findInstalledPackageFromList } from './utils/package-json.js';
 
 /**
@@ -36,7 +36,11 @@ ${options.filePatterns.join('\n')}
     await checkGitStatus();
   }
 
-  let targetSdk = options.sdk ?? (await detectSdk(cwd));
+  const packageJSON = await getPackageDotJson(cwd);
+
+  await checkIsInWorkspace(packageJSON);
+
+  let targetSdk = options.sdk ?? detectSdk(packageJSON);
 
   const allTransformers = await getTransformers();
 
@@ -84,11 +88,11 @@ ${options.filePatterns.join('\n')}
 }
 
 /**
- * @param {string} cwd
- * @returns {Promise<string | undefined>}
+ * @param {import('types').PackageDotJson} packageJSON
+ * @returns {string | undefined}
  */
-async function detectSdk(cwd) {
-  const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, await getPackageDotJson(cwd));
+function detectSdk(packageJSON) {
+  const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, packageJSON);
 
   const sdkName = sdkPackage ? sdkPackage.name : undefined;
 

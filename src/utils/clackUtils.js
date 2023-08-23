@@ -64,6 +64,32 @@ export async function checkGitStatus() {
 }
 
 /**
+ *
+ * @param {import('types').PackageDotJson} packageJSON
+ * @returns {Promise<boolean>}
+ */
+export async function checkIsInWorkspace(packageJSON) {
+  if (!packageJSON.workspaces) {
+    return false;
+  }
+
+  const continueInWorkspace = await abortIfCancelled(
+    confirm({
+      message:
+        'It seems you are running migr8 in a workspace. We recommend to run it in the subpackages themselves. Do you still want to continue?',
+      initialValue: false,
+    })
+  );
+
+  if (!continueInWorkspace) {
+    abort();
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Checks if the user is inside a git repository.
  * If not, it asks the user if they want to continue, otherwise we're fine.
  *
