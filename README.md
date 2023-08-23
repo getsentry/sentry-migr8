@@ -82,3 +82,7 @@ but only a few that have been deprecated:
 
 - `Handlers.ExpressRequest` → `PolymorphicRequest` (Type export)
 - `Handlers.extractRequestData` → `extractRequestData`
+
+### Tracing Config v7>v8
+
+Rewrites `tracePropagationTargets` and `tracingOrigins` from Integration-level config to root config on `Sentry.init()`.
