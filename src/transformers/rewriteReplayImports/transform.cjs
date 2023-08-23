@@ -1,9 +1,4 @@
-const {
-  rewriteEsmImports,
-  rewriteCjsRequires,
-  dedupeImportStatements,
-  hasSentryImportOrRequire,
-} = require('../../utils/jscodeshift.cjs');
+const { rewriteEsmImports, dedupeImportStatements, hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
 
 const SENTRY_REPLAY_PACKAGE = '@sentry/replay';
 
@@ -34,11 +29,6 @@ module.exports = function transform(fileInfo, api, options) {
   if (tracingImportPaths.length > 0) {
     dedupeImportStatements(options.sentry.sdk, tracingImportPaths, root, j);
   }
-
-  rewriteCjsRequires(SENTRY_REPLAY_PACKAGE, options.sentry.sdk, root, j);
-
-  // TODO: dedupe requires. We can do it but for now I'm gonna skip it.
-  //       ending up with duplicated requires/imports is not the end of the world.
 
   return root.toSource();
 };
