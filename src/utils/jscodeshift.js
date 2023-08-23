@@ -1,3 +1,4 @@
+import { log } from '@clack/prompts';
 import { run as jscodeshift } from 'jscodeshift/src/Runner.js';
 
 const JSCODESHIFT_EXTENSIONS = 'js,jsx,ts,tsx,cjs,cts,mjs,mts';
@@ -26,6 +27,7 @@ export async function runJscodeshift(transformPath, files, options) {
   try {
     await jscodeshift(transformPath, files, jsCodeshiftOptions);
   } catch (e) {
+    log.error('Failed to run jscodeshift transform:');
     // eslint-disable-next-line no-console
     console.error(e);
   }
