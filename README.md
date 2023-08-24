@@ -2,6 +2,8 @@
 
 HACKWEEK PROJECT - Migrate to the next JS SDK version
 
+**This Package is highly experimental! Use with Caution!**
+
 ## Usage
 
 - Clone the git project: `git clone git@github.com:getsentry/sentry-migr8.git`
