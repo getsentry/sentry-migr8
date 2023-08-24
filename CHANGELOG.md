@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.3
 
 - Handle *.vue and *.svelte files
 - Apply prettier after modifications
