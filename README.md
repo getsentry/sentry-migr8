@@ -6,14 +6,20 @@ HACKWEEK PROJECT - Migrate to the next JS SDK version
 
 ## Usage
 
-- Clone the git project: `git clone git@github.com:getsentry/sentry-migr8.git`
-- Run it in your applications directory: `node ~/path/to/sentry-migr8/src/index.js`
+Run `@sentry/migr8` in your application directory:
+
+```sh
+npx @sentry/migr8
+```
 
 By default we run all transformations on all files in the directory, ignoring any gitignored files.
 
+If you work in a monorepo, make sure to run `@sentry/migr8` in each subpackage instead of the monorepo root, as
+otherwise we cannot update dependencies etc. correctly.
+
 ### Options
 
-You can run `node ~/path/to/sentry-migr8/src/index.js --help` to get a list of available options.
+You can run `npx @sentry/migr8 --help` to get a list of available options.
 
 - `--filePatterns`: Glob pattern(s) which files should be transformed. Defaults to `**/*.{js,jsx,ts,tsx,mjs,cjs,mts}`
 - `--debug`: Enable verbose logging
