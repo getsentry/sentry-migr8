@@ -27,7 +27,7 @@ module.exports = function transform(fileInfo, api, options) {
 
   // 2. Dedupe imports
   if (tracingImportPaths.length > 0) {
-    dedupeImportStatements(options.sentry.sdk, tracingImportPaths, root, j);
+    dedupeImportStatements(options.sentry.sdk, root, j);
   }
 
   return root.toSource();

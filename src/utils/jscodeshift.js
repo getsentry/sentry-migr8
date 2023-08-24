@@ -9,6 +9,8 @@ const JSCODESHIFT_EXTENSIONS = 'js,jsx,ts,tsx,cjs,cts,mjs,mts';
  * @param {string} transformPath
  * @param {string[]} files
  * @param {import('types').RunOptions} options
+ *
+ * @returns {Promise<import('jscodeshift').Options>} the created options object
  */
 export async function runJscodeshift(transformPath, files, options) {
   /** @type {import('jscodeshift').Options} */
@@ -22,6 +24,8 @@ export async function runJscodeshift(transformPath, files, options) {
     sentry: {
       ...options,
     },
+    runInBand: true,
+    cpus: 1,
   };
 
   try {
@@ -31,4 +35,6 @@ export async function runJscodeshift(transformPath, files, options) {
     // eslint-disable-next-line no-console
     console.error(e);
   }
+
+  return jsCodeshiftOptions;
 }

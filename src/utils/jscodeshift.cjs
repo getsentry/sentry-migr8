@@ -52,17 +52,22 @@ function getSentryInitExpression(j, tree, source) {
  * @param {string} newPackage the name of the new package
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
+ *
+ * @returns {boolean} if something was changed
  */
 function rewriteCjsRequires(oldPackage, newPackage, root, j) {
+  let rewroteSomething = false;
   root
     .find(j.CallExpression)
-    .filter(path => isCjsRequireCall(path) && requiresOldPackage(path, oldPackage))
+    .filter(path => isCjsRequireCall(path) && requiresPackage(path, oldPackage))
     .forEach(path => {
       const firstArg = path.node.arguments[0];
       if (firstArg.type === 'StringLiteral') {
         firstArg.value = newPackage;
+        rewroteSomething = true;
       }
     });
+  return rewroteSomething;
 }
 
 /**
@@ -94,24 +99,33 @@ function rewriteEsmImports(oldPackage, newPackage, root, j) {
  * If we don't dedupe, users are left with potentially two or more import statements from
  * the SDK package, which is also fine.
  *
- * @param {string} sdkPackage
- * @param {import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration>[]} oldPackageImportPaths
+ * @param {string} packageName the name of the package whose imports should be deduped
  * @param {import('jscodeshift').Collection<any>} root
  * @param {import('jscodeshift').JSCodeshift} j
  */
-function dedupeImportStatements(sdkPackage, oldPackageImportPaths, root, j) {
-  const sdkImports = root.find(j.ImportDeclaration).filter(path => path.node.source.value === sdkPackage);
+function dedupeImportStatements(packageName, root, j) {
+  const packageImports = root.find(j.ImportDeclaration).filter(path => path.node.source.value === packageName);
 
-  const hasSdkNamespaceImport = sdkImports.find(j.ImportNamespaceSpecifier).length > 0;
+  const packageNameSpaceImports = packageImports.filter(
+    p => p.node.specifiers?.length === 1 && p.node.specifiers[0].type === 'ImportNamespaceSpecifier'
+  );
+  /** { @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration> | undefined */
+  const packageNamespaceImport = packageNameSpaceImports.length && packageNameSpaceImports.get(0);
 
-  if (hasSdkNamespaceImport) {
-    const sdkNameSpace = sdkImports.find(j.ImportNamespaceSpecifier).find(j.Identifier).nodes()[0].name;
+  if (packageNamespaceImport) {
+    const packageNamespace = packageNamespaceImport.node.specifiers?.[0].local?.name;
+    if (!packageNamespace) {
+      return;
+    }
+    const otherPackageImports = packageImports.filter(
+      importDeclPath => importDeclPath.node !== packageNamespaceImport.node
+    );
     // case 1: SDK import is a namespace import
     // e.g. import * as Sentry from '@sentry/browser';
     // Replace the formerly old package imports by adding the identifiers imported from the old package import to the SDK import
-    oldPackageImportPaths.forEach(oldPackageImportPath => {
+    otherPackageImports.forEach(otherPackageImportPath => {
       // case 1a: Old package import is a named import (e.g. import { BrowserTracing } from '@sentry/tracing')
-      j(oldPackageImportPath)
+      j(otherPackageImportPath)
         .find(j.ImportSpecifier)
         .filter(
           // for local name changes (e.g. import { BrowserTracing as Whatever } from '@sentry/tracing') we just bail
@@ -120,13 +134,13 @@ function dedupeImportStatements(sdkPackage, oldPackageImportPaths, root, j) {
         .forEach(specifier => {
           const id = specifier.node.imported.name;
           root.find(j.Identifier, { name: id }).forEach(idPath => {
-            idPath.replace(j.memberExpression(j.identifier(sdkNameSpace), j.identifier(id)));
+            idPath.replace(j.memberExpression(j.identifier(packageNamespace), j.identifier(id)));
           });
-          oldPackageImportPath.replace(undefined);
+          otherPackageImportPath.replace(undefined);
         });
 
       // case 1b: Old package import is a namespace import (e.g. import * as Tracing from '@sentry/tracing')
-      j(oldPackageImportPath)
+      j(otherPackageImportPath)
         .filter(t => t.node.specifiers?.length === 1)
         .find(j.ImportNamespaceSpecifier)
         .forEach(specifier => {
@@ -142,39 +156,44 @@ function dedupeImportStatements(sdkPackage, oldPackageImportPaths, root, j) {
               return parentType === 'MemberExpression' || parentType === 'TSQualifiedName';
             })
             .forEach(idPath => {
-              idPath.replace(j.identifier(sdkNameSpace));
-              oldPackageImportPath.replace(undefined);
+              idPath.replace(j.identifier(packageNamespace));
+              otherPackageImportPath.replace(undefined);
             });
         });
     });
+
+    return;
   }
 
-  const sdkImportDeclarationWithNamedImportSpecifier =
-    !hasSdkNamespaceImport &&
-    sdkImports
-      .filter(importDecl => {
-        const node = importDecl.node;
-        return !!node.specifiers?.find(specifier => specifier.type === 'ImportSpecifier');
-      })
-      .nodes()[0];
+  const namedPackageImports = packageImports.filter(importDecl => {
+    return !!importDecl.node.specifiers?.find(specifier => specifier.type === 'ImportSpecifier');
+  });
+  /** { @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration> */
+  const packageImportDeclarationWithNamedImportSpecifier =
+    !packageNamespaceImport && namedPackageImports.length && namedPackageImports.get(0);
 
-  if (sdkImportDeclarationWithNamedImportSpecifier) {
-    // case 2: SDK import has named import specifier
+  if (packageImportDeclarationWithNamedImportSpecifier) {
+    const otherPackageImports = packageImports.filter(
+      importDeclPath => importDeclPath.node !== packageImportDeclarationWithNamedImportSpecifier.node
+    );
+
+    // case 2: Package import has named import specifier
     // e.g. import { init } from '@sentry/react';
-    oldPackageImportPaths.forEach(oldPackageImportPath => {
-      const oldPackageImport = oldPackageImportPath.node;
+    otherPackageImports.forEach(otherPackageImportPath => {
+      const otherPackageImport = otherPackageImportPath.node;
       const isNamespaceOldPackageImport =
-        oldPackageImport.specifiers?.length === 1 && oldPackageImport.specifiers[0].type === 'ImportNamespaceSpecifier';
+        otherPackageImport.specifiers?.length === 1 &&
+        otherPackageImport.specifiers[0].type === 'ImportNamespaceSpecifier';
 
       // Case 2a: Old package import is not a namespace import
       // e.g. import { BrowserTracing } from '@sentry/tracing';
       // Replace the import declaration with adding the old package identifiers to the SDK import
       if (!isNamespaceOldPackageImport) {
-        oldPackageImport.specifiers?.forEach(specifier => {
-          sdkImportDeclarationWithNamedImportSpecifier.specifiers?.push(specifier);
+        otherPackageImport.specifiers?.forEach(specifier => {
+          packageImportDeclarationWithNamedImportSpecifier.node.specifiers?.push(specifier);
         });
 
-        oldPackageImportPath.replace(undefined);
+        otherPackageImportPath.replace(undefined);
       }
     });
   }
@@ -192,12 +211,12 @@ function isCjsRequireCall(path) {
 /**
  *
  * @param {import('jscodeshift').ASTPath<import('jscodeshift').CallExpression>} path
- * @param {string} oldPackageName
+ * @param {string} packageName
  * @returns {boolean}
  */
-function requiresOldPackage(path, oldPackageName) {
+function requiresPackage(path, packageName) {
   const args = path.node.arguments;
-  return args.length === 1 && args[0].type === 'StringLiteral' && args[0].value === oldPackageName;
+  return args.length === 1 && args[0].type === 'StringLiteral' && args[0].value === packageName;
 }
 
 /**
@@ -350,4 +369,6 @@ module.exports = {
   getSentryInitExpression,
   replaceFunctionCalls,
   replaceImported,
+  requiresPackage,
+  isCjsRequireCall,
 };
