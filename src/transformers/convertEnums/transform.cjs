@@ -1,4 +1,5 @@
 const { hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
+const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 const SpanStatusMap = new Map([
   ['Ok', 'ok'],
@@ -46,70 +47,73 @@ const enumMap = new Map([
  */
 module.exports = function (fileInfo, api) {
   const j = api.jscodeshift;
-
   const source = fileInfo.source;
-  const tree = j(source);
+  const fileName = fileInfo.path;
 
   // Bail out if file has no sentry import - nothing to do then!
   if (!hasSentryImportOrRequire(source)) {
     return undefined;
   }
 
-  /** @type {Record<string,string>} */
-  const remove = {
-    Severity: 'unused',
-    SpanStatus: 'unused',
-  };
+  return wrapJscodeshift(j, source, fileName, (j, source) => {
+    const tree = j(source);
 
-  tree.find(j.MemberExpression, { property: { type: 'Identifier' } }).forEach(path => {
-    if (path.value.property.type !== 'Identifier') {
-      return;
-    }
+    /** @type {Record<string,string>} */
+    const remove = {
+      Severity: 'unused',
+      SpanStatus: 'unused',
+    };
 
-    let enumKey = undefined;
-
-    if (path.value.object.type === 'Identifier') {
-      enumKey = path.value.object.name;
-    } else if (
-      path.value.object.type === 'MemberExpression' &&
-      path.value.object.object.type === 'Identifier' &&
-      path.value.object.object.name === 'Sentry' &&
-      path.value.object.property.type === 'Identifier'
-    ) {
-      enumKey = path.value.object.property.name;
-    }
-
-    if (!enumKey) {
-      return;
-    }
-
-    const map = enumMap.get(enumKey);
-
-    if (!map) {
-      return;
-    }
-
-    const value = path.value.property.name;
-    const newValue = map.get(value);
-
-    if (newValue) {
-      path.replace(j.stringLiteral(newValue));
-      if (remove[enumKey] !== 'no') {
-        remove[enumKey] = 'yes';
+    tree.find(j.MemberExpression, { property: { type: 'Identifier' } }).forEach(path => {
+      if (path.value.property.type !== 'Identifier') {
+        return;
       }
-    } else {
-      // Unknown value, do not remove it
-      remove[enumKey] = 'no';
+
+      let enumKey = undefined;
+
+      if (path.value.object.type === 'Identifier') {
+        enumKey = path.value.object.name;
+      } else if (
+        path.value.object.type === 'MemberExpression' &&
+        path.value.object.object.type === 'Identifier' &&
+        path.value.object.object.name === 'Sentry' &&
+        path.value.object.property.type === 'Identifier'
+      ) {
+        enumKey = path.value.object.property.name;
+      }
+
+      if (!enumKey) {
+        return;
+      }
+
+      const map = enumMap.get(enumKey);
+
+      if (!map) {
+        return;
+      }
+
+      const value = path.value.property.name;
+      const newValue = map.get(value);
+
+      if (newValue) {
+        path.replace(j.stringLiteral(newValue));
+        if (remove[enumKey] !== 'no') {
+          remove[enumKey] = 'yes';
+        }
+      } else {
+        // Unknown value, do not remove it
+        remove[enumKey] = 'no';
+      }
+    });
+
+    const toRemove = Object.keys(remove).filter(key => remove[key] === 'yes');
+
+    if (toRemove.length > 0) {
+      removeImportedIdentifiers(j, tree, toRemove);
     }
+
+    return tree.toSource();
   });
-
-  const toRemove = Object.keys(remove).filter(key => remove[key] === 'yes');
-
-  if (toRemove.length > 0) {
-    removeImportedIdentifiers(j, tree, toRemove);
-  }
-
-  return tree.toSource();
 };
 
 /**
@@ -143,7 +147,11 @@ function removeImportedIdentifiers(j, tree, identifiers) {
         pos++;
       }
 
-      path.value.specifiers = specifiers;
+      if (specifiers.length > 0) {
+        path.value.specifiers = specifiers;
+      } else {
+        j(path).remove();
+      }
     });
 
   // Then find requires
@@ -182,7 +190,11 @@ function removeImportedIdentifiers(j, tree, identifiers) {
           pos++;
         }
 
-        requireVars.properties = properties;
+        if (properties.length > 0) {
+          requireVars.properties = properties;
+        } else {
+          j(path).remove();
+        }
       }
     });
 }

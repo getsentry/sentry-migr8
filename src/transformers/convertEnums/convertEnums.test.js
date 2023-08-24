@@ -149,4 +149,139 @@ function doSomething() {
 `
     );
   });
+
+  it('works with a single require', async () => {
+    tmpDir = makeTmpDir(getFixturePath('enumsApp'));
+    const file = 'withSingleRequire.js';
+    const files = [`${tmpDir}/${file}`];
+    await convertEnumsTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `function doSomething() {
+  const a = "fatal";
+}`
+    );
+  });
+
+  it('works with a single import', async () => {
+    tmpDir = makeTmpDir(getFixturePath('enumsApp'));
+    const file = 'withSingleImport.js';
+    const files = [`${tmpDir}/${file}`];
+    await convertEnumsTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `function doSomething() {
+  const a = "fatal";
+}`
+    );
+  });
+
+  it('works with .vue file', async () => {
+    tmpDir = makeTmpDir(getFixturePath('enumsApp'));
+    const file = 'vueFile.vue';
+    const files = [`${tmpDir}/${file}`];
+    await convertEnumsTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `<script setup>
+import { ref } from 'vue'
+import * as Sentry from '@sentry/vue'
+
+defineProps({
+  msg: String
+})
+
+console.log("info")
+console.log("info")
+
+const count = ref(0)
+</script>
+
+<template>
+  <h1>{{ msg }}</h1>
+
+  <div class="card">
+    <button type="button" @click="count++">count is {{ count }}</button>
+    <p>
+      This is a very simple test app.
+    </p>
+  </div>
+
+  <p>
+    Check out
+    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank">create-vue</a>, the official Vue + Vite
+    starter
+  </p>
+  <p>
+    Install
+    <a href="https://github.com/johnsoncodehk/volar" target="_blank">Volar</a>
+    in your IDE for a better DX
+  </p>
+  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+</template>
+
+<style scoped>
+.read-the-docs {
+  color: #888;
+}
+</style>`
+    );
+  });
+
+  it('works with .svelte file', async () => {
+    tmpDir = makeTmpDir(getFixturePath('enumsApp'));
+    const file = 'svelteFile.svelte';
+    const files = [`${tmpDir}/${file}`];
+    await convertEnumsTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `<script lang="ts">
+  import { browser } from '$app/environment';
+  import TextLink from '$lib/components/text-link.svelte';
+  export let company: string;
+  export let position: string;
+  export let url: string | undefined = undefined;
+  export let timeFrame: string | undefined = undefined;
+  export let location: string | undefined = undefined;
+  import * as Sentry from '@sentry/svelte';
+  import { onDestroy } from 'svelte';
+  if (browser) {
+    Sentry.setTag('component', 'Test');
+    onDestroy(() => {
+      Sentry.setTag('component', undefined);
+    });
+    const currentSpan = Sentry.getActiveTransaction();
+    currentSpan?.setStatus("ok" || "ok");
+  }
+</script>
+<div class="flex flex-col w-full">
+  {#if url}
+    <h3>
+      <TextLink href={url}><span class="font-bold text-lg">{company}</span></TextLink>
+    </h3>
+  {:else}
+    <h3><span class="font-bold text-lg">{company}</span></h3>
+  {/if}
+  <span class="whitespace-nowrap">{position}</span>
+  {#if timeFrame}
+    <span class="whitespace-nowrap text-xs">{timeFrame}</span>
+  {/if}
+  {#if location}
+    <span class="whitespace-nowrap text-xs">{location}</span>
+  {/if}
+</div>`
+    );
+  });
 });

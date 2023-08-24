@@ -1,4 +1,5 @@
 const { replaceFunctionCalls } = require('../../utils/jscodeshift.cjs');
+const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 const FunctionMap = new Map([
   ['withSentryAPI', 'wrapApiHandlerWithSentry'],
@@ -30,13 +31,16 @@ const FunctionMap = new Map([
  */
 module.exports = function (fileInfo, api) {
   const j = api.jscodeshift;
-
   const source = fileInfo.source;
-  const tree = j(source);
+  const fileName = fileInfo.path;
 
-  if (!replaceFunctionCalls(j, tree, source, '@sentry/nextjs', FunctionMap)) {
-    return;
-  }
+  return wrapJscodeshift(j, source, fileName, (j, source) => {
+    const tree = j(source);
 
-  return tree.toSource();
+    if (!replaceFunctionCalls(j, tree, source, '@sentry/nextjs', FunctionMap)) {
+      return undefined;
+    }
+
+    return tree.toSource();
+  });
 };

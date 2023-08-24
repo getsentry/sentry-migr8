@@ -1,4 +1,5 @@
 const { rewriteEsmImports, dedupeImportStatements, hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
+const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 const SENTRY_REPLAY_PACKAGE = '@sentry/replay';
 
@@ -15,20 +16,25 @@ const SENTRY_REPLAY_PACKAGE = '@sentry/replay';
  * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
  */
 module.exports = function transform(fileInfo, api, options) {
+  const j = api.jscodeshift;
+  const source = fileInfo.source;
+  const fileName = fileInfo.path;
+
   if (!hasSentryImportOrRequire(fileInfo.source, '@sentry/replay')) {
     return undefined;
   }
 
-  const j = api.jscodeshift;
-  const root = j(fileInfo.source, options);
+  return wrapJscodeshift(j, source, fileName, (j, source) => {
+    const root = j(source, options);
 
-  // 1. Replace tracing import with SDK import
-  const tracingImportPaths = rewriteEsmImports(SENTRY_REPLAY_PACKAGE, options.sentry.sdk, root, j);
+    // 1. Replace tracing import with SDK import
+    const tracingImportPaths = rewriteEsmImports(SENTRY_REPLAY_PACKAGE, options.sentry.sdk, root, j);
 
-  // 2. Dedupe imports
-  if (tracingImportPaths.length > 0) {
-    dedupeImportStatements(options.sentry.sdk, root, j);
-  }
+    // 2. Dedupe imports
+    if (tracingImportPaths.length > 0) {
+      dedupeImportStatements(options.sentry.sdk, root, j);
+    }
 
-  return root.toSource();
+    return root.toSource();
+  });
 };

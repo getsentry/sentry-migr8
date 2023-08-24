@@ -1,7 +1,7 @@
 import { log } from '@clack/prompts';
 import { run as jscodeshift } from 'jscodeshift/src/Runner.js';
 
-const JSCODESHIFT_EXTENSIONS = 'js,jsx,ts,tsx,cjs,cts,mjs,mts';
+const JSCODESHIFT_EXTENSIONS = 'js,jsx,ts,tsx,cjs,cts,mjs,mts,.vue,.svelte';
 
 /**
  * Run a jscodeshift transform.
