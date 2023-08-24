@@ -14,6 +14,8 @@ import {
 } from './utils/clackUtils.js';
 import { SENTRY_SDK_PACKAGE_NAMES, findInstalledPackageFromList } from './utils/package-json.js';
 
+process.setMaxListeners(0);
+
 /**
  *
  * @param {import("types").RunOptions} options
