@@ -231,9 +231,11 @@ export async function maybeRunPrettier(cwd, packageJSON) {
 function detectPrettierCommand(packageJSON) {
   const scripts = packageJSON.scripts ?? {};
 
+  const regex = /prettier(.*) --write/i;
+
   const prettierCmd = Object.keys(scripts).find(scriptName => {
     const cmd = scripts[scriptName];
-    return cmd?.includes('prettier --write');
+    return cmd && regex.test(cmd);
   });
 
   if (prettierCmd) {
