@@ -1,5 +1,7 @@
 # Changelog
 
+- fix incorrect deduping of named to namespace imports
+
 ## 0.0.3
 
 - Handle *.vue and *.svelte files
