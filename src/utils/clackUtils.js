@@ -2,7 +2,11 @@ import * as childProcess from 'node:child_process';
 import { promises as fsPromises } from 'node:fs';
 import * as path from 'node:path';
 
-import { cancel, isCancel, confirm, log } from '@clack/prompts';
+import { cancel, isCancel, confirm, log, spinner } from '@clack/prompts';
+
+import { findInstalledPackageFromList } from './package-json.js';
+import { JSCODESHIFT_EXTENSIONS } from './jscodeshift.js';
+import { getPackageManagerAPI } from './packageManager.js';
 
 /**
  * Users can cancel at every input (Cmd+c). Clack returns a symbol for that case which we need to check for.
@@ -178,4 +182,63 @@ export function debugError(message, show) {
   if (show) {
     log.error(`[Debug] ${message}`);
   }
+}
+
+/**
+ *
+ * @param {string} cwd
+ * @param {import('types').PackageDotJson} packageJSON
+ */
+export async function maybeRunPrettier(cwd, packageJSON) {
+  const hasPrettier = !!findInstalledPackageFromList(['prettier'], packageJSON);
+
+  if (!hasPrettier) {
+    return;
+  }
+
+  const packageManagerApi = getPackageManagerAPI(cwd);
+  const baseCmd = detectPrettierCommand(packageJSON);
+  const cmd = `${packageManagerApi.run} ${baseCmd}`;
+
+  const runPrettier = await abortIfCancelled(
+    confirm({
+      message: `You have prettier installed. Do you want to run '${cmd}'?`,
+      initialValue: true,
+    })
+  );
+
+  if (runPrettier === true) {
+    const s = spinner();
+    s.start('Running prettier...');
+
+    try {
+      childProcess.execSync(cmd, {
+        stdio: 'ignore',
+        cwd,
+      });
+      s.stop('Prettier completed.');
+    } catch (error) {
+      s.stop('Prettier failed to complete.');
+    }
+  }
+}
+
+/**
+ *
+ * @param {import('types').PackageDotJson} packageJSON
+ * @return {string}
+ */
+function detectPrettierCommand(packageJSON) {
+  const scripts = packageJSON.scripts ?? {};
+
+  const prettierCmd = Object.keys(scripts).find(scriptName => {
+    const cmd = scripts[scriptName];
+    return cmd?.includes('prettier --write');
+  });
+
+  if (prettierCmd) {
+    return prettierCmd;
+  }
+
+  return `prettier --write "${JSCODESHIFT_EXTENSIONS}"`;
 }

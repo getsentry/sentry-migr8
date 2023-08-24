@@ -5,7 +5,13 @@ import { globby } from 'globby';
 import chalk from 'chalk';
 
 import { getTransformers } from './utils/getTransformers.js';
-import { abortIfCancelled, checkGitStatus, checkIsInWorkspace, getPackageDotJson } from './utils/clackUtils.js';
+import {
+  abortIfCancelled,
+  checkGitStatus,
+  checkIsInWorkspace,
+  getPackageDotJson,
+  maybeRunPrettier,
+} from './utils/clackUtils.js';
 import { SENTRY_SDK_PACKAGE_NAMES, findInstalledPackageFromList } from './utils/package-json.js';
 
 /**
@@ -83,6 +89,8 @@ ${options.filePatterns.join('\n')}
       console.error(error);
     }
   }
+
+  await maybeRunPrettier(cwd, packageJSON);
 
   outro('All transformers completed!');
 }
