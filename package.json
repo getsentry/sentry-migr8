@@ -18,6 +18,9 @@
     "sentry-migr8": "./src/index.js"
   },
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "lint": "pnpm lint:prettier && pnpm lint:eslint && pnpm lint:tsc",
     "lint:eslint": "eslint . --format stylish",
