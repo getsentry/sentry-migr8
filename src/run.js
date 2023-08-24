@@ -35,8 +35,10 @@ ${options.filePatterns.join('\n')}
 (You can change this by specifying the --filePatterns option)`);
 
   const cwd = options.cwd ?? process.cwd();
+  const ignore =
+    options.ignoreFilePatterns && options.ignoreFilePatterns.length > 0 ? options.ignoreFilePatterns : undefined;
 
-  const files = (await globby(options.filePatterns, { cwd, gitignore: true })).map(relativePath =>
+  const files = (await globby(options.filePatterns, { cwd, gitignore: true, ignore })).map(relativePath =>
     path.resolve(relativePath)
   );
 

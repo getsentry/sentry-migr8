@@ -23,6 +23,8 @@ You can run `npx @sentry/migr8 --help` to get a list of available options.
 
 - `--filePatterns`: Glob pattern(s) which files should be transformed. Defaults to
   `**/*.{js,jsx,ts,tsx,mjs,cjs,mts,.vue,.svele}`
+- `--ignoreFilePatterns`: Glob pattern(s) which files should be ignored. This overwrites files matched by
+  `--filePatterns`.
 - `--debug`: Enable verbose logging
 - `--sdk`: We try to detect the used Sentry SDK package, e.g. `@sentry/browser`. You can overwrite this and provide the
   SDK package you're using.

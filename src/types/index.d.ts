@@ -1,5 +1,6 @@
 export interface RunOptions {
   filePatterns: string[];
+  ignoreFilePatterns: string[];
   debug?: boolean;
   skipGitChecks?: boolean;
   dry?: boolean;

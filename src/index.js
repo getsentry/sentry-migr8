@@ -25,6 +25,13 @@ async function _run() {
       type: 'string',
       array: true,
     })
+    .option('ignoreFilePatterns', {
+      alias: 'if',
+      describe: 'Glob pattern which files should be ignored',
+      default: [],
+      type: 'string',
+      array: true,
+    })
     .option('debug', {
       default: false,
       describe: 'Enable verbose logging',
