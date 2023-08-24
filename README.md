@@ -54,7 +54,7 @@ Sentry.init({
 });
 ```
 
-### Remove deprecated packaes
+### Remove deprecated packages
 
 Removes deprecated packages (`@sentry/hub`, `@sentry/tracing` and `@sentry/replay`) from your application. These are not
 needed anymore, and their exports can just be imported from your main SDK package instead.
@@ -100,3 +100,15 @@ Rewrites some old exports from `@sentry/utils` to their newer formats:
 ### Convert Enums to String Literals
 
 Replaces the deprecated `Sentry.Severity` and `Sentry.SpanStatus` enums with their string literal values.
+
+### Remove `@sentry/hub` imports
+
+Replaces imports from the deprecated `@sentry/hub` package with the newer imports.
+
+### Remove `@sentry/replay` imports
+
+Replaces imports from the deprecated `@sentry/replay` package with the newer imports.
+
+### Remove `@sentry/tracing` imports
+
+Replaces imports from the deprecated `@sentry/tracing` package with the newer imports.
