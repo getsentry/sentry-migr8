@@ -213,11 +213,23 @@ function dedupeImportStatements(packageName, root, j) {
         )
         .forEach(specifier => {
           const id = specifier.node.imported.name;
-          root.find(j.Identifier, { name: id }).forEach(idPath => {
-            idPath.replace(j.memberExpression(j.identifier(packageNamespace), j.identifier(id)));
-          });
-          otherPackageImportPath.replace(undefined);
+          root
+            .find(j.Identifier, { name: id })
+            .filter(idPath => {
+              return idPath.parentPath.value.type !== 'MemberExpression';
+            })
+            .forEach(idPath => {
+              idPath.replace(j.memberExpression(j.identifier(packageNamespace), j.identifier(id)));
+            });
+          otherPackageImportPath.node.specifiers?.splice(
+            otherPackageImportPath.node.specifiers.indexOf(specifier.node),
+            1
+          );
         });
+
+      if (!otherPackageImportPath.node.specifiers?.length) {
+        otherPackageImportPath.replace(undefined);
+      }
 
       // case 1b: Old package import is a namespace import (e.g. import * as Tracing from '@sentry/tracing')
       j(otherPackageImportPath)

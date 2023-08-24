@@ -80,7 +80,21 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-Sentry.addExtensionMethods();`
+Sentry.setTag('shouldBePrefixed', true);
+
+Sentry.addExtensionMethods();
+
+const transaction = Sentry.startTransaction({ name: 'test-transaction' });
+
+Sentry.configureScope(scope => {
+  scope.setSpan(transaction);
+});
+
+transaction.setTag('shouldBePrefixed', false)
+
+doLongRunningThing();
+
+transaction.finish();`
     );
 
     assertStringEquals(
@@ -146,7 +160,7 @@ addExtensionMethods();`
 
     assertStringEquals(
       actual2,
-      ` const { init: SentryInit } = require('@sentry/node');
+      `const { init: SentryInit } = require('@sentry/node');
 const { addExtensionMethods } = require("@sentry/node");
 
 SentryInit({
