@@ -94,6 +94,86 @@ function rewriteEsmImports(oldPackage, newPackage, root, j) {
 }
 
 /**
+ * Deduplicate imported identifiers.
+ * E.g. `import { aa, aa, bb } from '@sentry/react';`
+ * --> `import { aa, bb } from '@sentry/react';`
+ *
+ * @param {import('jscodeshift').JSCodeshift} j
+ * @param {import('jscodeshift').Collection<any>} tree
+ * @param {string} packageName
+ */
+function dedupeImportedIdentifiers(j, tree, packageName) {
+  // First find imports
+  tree.find(j.ImportDeclaration, { source: { type: 'StringLiteral', value: packageName } }).forEach(path => {
+    const seen = new Set();
+
+    const specifiers = path.value.specifiers || [];
+    let pos = 0;
+    while (pos < specifiers.length) {
+      const specifier = specifiers[pos];
+      if (specifier.type !== 'ImportSpecifier' || !specifier.local) {
+        return;
+      }
+
+      const name = specifier.local.name;
+      if (seen.has(name)) {
+        specifiers.splice(pos, 1);
+      } else {
+        seen.add(name);
+      }
+
+      pos++;
+    }
+
+    path.value.specifiers = specifiers;
+  });
+
+  // Then find requires
+  tree
+    .find(j.VariableDeclaration, {
+      declarations: [
+        {
+          type: 'VariableDeclarator',
+          init: {
+            type: 'CallExpression',
+            callee: { type: 'Identifier', name: 'require' },
+            arguments: [{ value: packageName }],
+          },
+        },
+      ],
+    })
+    .forEach(path => {
+      if (
+        path.value.declarations[0].type === 'VariableDeclarator' &&
+        path.value.declarations[0].id.type === 'ObjectPattern'
+      ) {
+        const requireVars = path.value.declarations[0].id;
+        const seen = new Set();
+
+        const properties = requireVars.properties;
+        let pos = 0;
+        while (pos < properties.length) {
+          const prop = properties[pos];
+          if (prop.type !== 'ObjectProperty' || prop.value.type !== 'Identifier') {
+            return;
+          }
+
+          const name = prop.value.name;
+          if (seen.has(name)) {
+            properties.splice(pos, 1);
+          } else {
+            seen.add(name);
+          }
+
+          pos++;
+        }
+
+        requireVars.properties = properties;
+      }
+    });
+}
+
+/**
  * Attempts to deduplicate import statements that import from the SDK package.
  * This is not perfect but it might cover the 80% case.
  * If we don't dedupe, users are left with potentially two or more import statements from
@@ -357,6 +437,8 @@ function replaceImported(j, tree, source, packageName, importMap) {
         });
       }
     });
+
+  dedupeImportedIdentifiers(j, tree, packageName);
 
   return true;
 }

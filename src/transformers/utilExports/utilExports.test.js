@@ -74,4 +74,47 @@ function doSomething() {
 }`
     );
   });
+
+  it('deduplicates imports', async () => {
+    tmpDir = makeTmpDir(getFixturePath('utilsApp'));
+    const file = 'withExistingImports.js';
+    const files = [`${tmpDir}/${file}`];
+    await utilExportsTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `import { severityLevelFromString, other } from '@sentry/utils';
+
+function doSomething() {
+  const a = severityLevelFromString('warning');
+  const b = severityLevelFromString('warning');
+  const c = other();
+}`
+    );
+  });
+
+  it('deduplicates requires', async () => {
+    tmpDir = makeTmpDir(getFixturePath('utilsApp'));
+    const file = 'withExistingRequire.js';
+    const files = [`${tmpDir}/${file}`];
+    await utilExportsTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `const {
+  severityLevelFromString,
+  other
+} = require('@sentry/utils');
+
+function doSomething() {
+  const a = severityLevelFromString('warning');
+  const b = severityLevelFromString();
+  const c = other();
+}`
+    );
+  });
 });
