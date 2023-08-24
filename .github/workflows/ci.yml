@@ -39,3 +39,35 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+  artifacts:
+    name: Pack & Upload Artifacts
+    runs-on: ubuntu-20.04
+    needs: test
+    steps:
+      - name: Check out current commit
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Pack
+        run: pnpm pack
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Migr8 Artifacts
+          path: |
+            *.tgz
