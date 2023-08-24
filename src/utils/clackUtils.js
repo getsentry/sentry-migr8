@@ -242,5 +242,5 @@ function detectPrettierCommand(packageJSON) {
     return prettierCmd;
   }
 
-  return `prettier --write "${JSCODESHIFT_EXTENSIONS}"`;
+  return `prettier --write "**/*.{${JSCODESHIFT_EXTENSIONS}}"`;
 }

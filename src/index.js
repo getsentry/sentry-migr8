@@ -5,6 +5,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { run } from './run.js';
+import { JSCODESHIFT_EXTENSIONS } from './utils/jscodeshift.js';
 
 const NODE_VERSION_RANGE = '>=18';
 
@@ -20,7 +21,7 @@ async function _run() {
     .option('filePatterns', {
       alias: 'f',
       describe: 'Glob pattern which files should be transformed',
-      default: ['**/*.{js,jsx,ts,tsx,mjs,cjs,mts}'],
+      default: [`**/*.{${JSCODESHIFT_EXTENSIONS}}`],
       type: 'string',
       array: true,
     })
