@@ -1,14 +1,23 @@
 {
   "name": "@sentry/migr8",
   "version": "0.0.0",
+  "homepage": "https://github.com/getsentry/sentry-migr8",
+  "repository": "https://github.com/getsentry/sentry-migr8",
   "description": "Run migrations for the Sentry JavaScript SDKs.",
-  "main": "src/index.js",
-  "bin": "./src/index.js",
-  "type": "module",
-  "repository": "git@github.com:getsentry/sentry-migr8.git",
+  "keywords": [
+    "sentry",
+    "sdk",
+    "upgrade",
+    "migrate",
+    "codemod"
+  ],
   "author": "Sentry",
   "license": "MIT",
-  "private": false,
+  "main": "src/index.js",
+  "bin": {
+    "sentry-migr8": "./src/index.js"
+  },
+  "type": "module",
   "scripts": {
     "lint": "pnpm lint:prettier && pnpm lint:eslint && pnpm lint:tsc",
     "lint:eslint": "eslint . --format stylish",

@@ -69,6 +69,6 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: Migr8 Artifacts
+          name: ${{ github.sha }}
           path: |
-            *.tgz
+            ${{ github.workspace }}/*.tgz
