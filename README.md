@@ -96,3 +96,7 @@ Rewrites some old exports from `@sentry/utils` to their newer formats:
 - `severityFromString` → `severityLevelFromString`
 - `getGlobalObject()` → `GLOBAL_OBJ`
 - `timestampWithMs` → `timestampInSeconds`
+
+### Convert Enums to String Literals
+
+Replaces the deprecated `Sentry.Severity` and `Sentry.SpanStatus` enums with their string literal values.
