@@ -3,10 +3,12 @@ import { promises as fsPromises } from 'node:fs';
 import * as path from 'node:path';
 
 import { cancel, isCancel, confirm, log, spinner } from '@clack/prompts';
+import * as Sentry from '@sentry/node';
 
 import { findInstalledPackageFromList } from './package-json.js';
 import { JSCODESHIFT_EXTENSIONS } from './jscodeshift.js';
 import { getPackageManagerAPI } from './packageManager.js';
+import { traceStep } from './telemetry.js';
 
 /**
  * Users can cancel at every input (Cmd+c). Clack returns a symbol for that case which we need to check for.
@@ -19,6 +21,12 @@ import { getPackageManagerAPI } from './packageManager.js';
 export async function abortIfCancelled(input) {
   if (isCancel(await input)) {
     cancel('Migr8 run cancelled, see you next time :)');
+    const sentryHub = Sentry.getCurrentHub();
+    const sentryTransaction = sentryHub.getScope().getTransaction();
+    sentryTransaction?.setStatus('cancelled');
+    sentryTransaction?.finish();
+    sentryHub.captureSession(true);
+    await Sentry.flush(3000);
     process.exit(0);
   } else {
     // @ts-ignore
@@ -46,7 +54,7 @@ export async function checkGitStatus() {
     );
 
     if (!continueWithoutGit) {
-      abort();
+      await abort();
     }
     // No need to check for changed files if not in repo!
     return;
@@ -62,7 +70,7 @@ export async function checkGitStatus() {
     );
 
     if (!continueWithChanges) {
-      abort();
+      await abort();
     }
   }
 }
@@ -86,7 +94,7 @@ export async function checkIsInWorkspace(packageJSON) {
   );
 
   if (!continueInWorkspace) {
-    abort();
+    await abort();
     return false;
   }
 
@@ -135,8 +143,18 @@ function hasChangedFiles() {
  * @param {string=} customMessage
  * @param {number=} exitCode
  */
-function abort(customMessage, exitCode = 0) {
+async function abort(customMessage, exitCode = 0) {
   cancel(customMessage ?? 'Exiting, see you next time :)');
+  const sentryHub = Sentry.getCurrentHub();
+  const sentryTransaction = sentryHub.getScope().getTransaction();
+  sentryTransaction?.setStatus('aborted');
+  sentryTransaction?.finish();
+  const sentrySession = sentryHub.getScope().getSession();
+  if (sentrySession) {
+    sentrySession.status = exitCode === 0 ? 'abnormal' : 'crashed';
+    sentryHub.captureSession(true);
+  }
+  await Sentry.flush(3000);
   process.exit(exitCode);
 }
 
@@ -192,6 +210,8 @@ export function debugError(message, show) {
 export async function maybeRunPrettier(cwd, packageJSON) {
   const hasPrettier = !!findInstalledPackageFromList(['prettier'], packageJSON);
 
+  Sentry.setTag('has-prettier', hasPrettier);
+
   if (!hasPrettier) {
     return;
   }
@@ -200,26 +220,32 @@ export async function maybeRunPrettier(cwd, packageJSON) {
   const baseCmd = detectPrettierCommand(packageJSON);
   const cmd = `${packageManagerApi.run} ${baseCmd}`;
 
-  const runPrettier = await abortIfCancelled(
-    confirm({
-      message: `You have prettier installed. Do you want to run '${cmd}'?`,
-      initialValue: true,
-    })
+  const runPrettier = await traceStep('ask-use-prettier', () =>
+    abortIfCancelled(
+      confirm({
+        message: `You have prettier installed. Do you want to run '${cmd}'?`,
+        initialValue: true,
+      })
+    )
   );
 
-  if (runPrettier === true) {
-    const s = spinner();
-    s.start('Running prettier...');
+  Sentry.setTag('run-prettier', runPrettier);
 
-    try {
-      childProcess.execSync(cmd, {
-        stdio: 'ignore',
-        cwd,
-      });
-      s.stop('Prettier completed.');
-    } catch (error) {
-      s.stop('Prettier failed to complete.');
-    }
+  if (runPrettier === true) {
+    traceStep('run-prettier', () => {
+      const s = spinner();
+      s.start('Running prettier...');
+
+      try {
+        childProcess.execSync(cmd, {
+          stdio: 'ignore',
+          cwd,
+        });
+        s.stop('Prettier completed.');
+      } catch (error) {
+        s.stop('Prettier failed to complete.');
+      }
+    });
   }
 }
 

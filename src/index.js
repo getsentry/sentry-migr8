@@ -52,6 +52,12 @@ async function _run() {
       type: 'string',
       describe: 'The cwd dir to use. Defaults to process.cwd().',
     })
+    .option('disableTelemetry', {
+      type: 'boolean',
+      describe: 'Disable collecting and sending telemetry data to Sentry',
+      default: false,
+    })
+    .wrap(Math.min(yargs().terminalWidth(), 120))
     .parse();
 
   await run(argv);

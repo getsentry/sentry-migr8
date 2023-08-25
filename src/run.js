@@ -3,6 +3,7 @@ import * as path from 'path';
 import { intro, outro, select, multiselect, spinner, note, log } from '@clack/prompts';
 import { globby } from 'globby';
 import chalk from 'chalk';
+import * as Sentry from '@sentry/node';
 
 import { getTransformers } from './utils/getTransformers.js';
 import {
@@ -13,6 +14,7 @@ import {
   maybeRunPrettier,
 } from './utils/clackUtils.js';
 import { SENTRY_SDK_PACKAGE_NAMES, findInstalledPackageFromList } from './utils/package-json.js';
+import { traceStep, withTelemetry } from './utils/telemetry.js';
 
 process.setMaxListeners(0);
 
@@ -21,18 +23,33 @@ process.setMaxListeners(0);
  * @param {import("types").RunOptions} options
  */
 export async function run(options) {
-  intro(chalk.inverse('Welcome to sentry-migr8!'));
-  note(
-    `This command line tool will update your Sentry JavaScript setup to the latest version.
+  withTelemetry({ enabled: !options.disableTelemetry }, () => runWithTelementry(options));
+}
 
-We will guide you through the process step by step.`
-  );
+/**
+ * @param {import("types").RunOptions} options
+ */
+export async function runWithTelementry(options) {
+  traceStep('intro', () => {
+    intro(chalk.inverse('Welcome to sentry-migr8!'));
+    note(
+      `This command line tool will update your Sentry JavaScript setup to the latest version.
 
-  note(`We will run transforms on files matching the following ${
-    options.filePatterns.length > 1 ? 'patterns' : 'pattern'
-  }, ignoring any gitignored files:
-${options.filePatterns.join('\n')}
-(You can change this by specifying the --filePatterns option)`);
+  We will guide you through the process step by step.${
+    !options.disableTelemetry
+      ? `
+  This tool collectes anonymous telemetry data and sends it to Sentry.
+  You can disable this by passing the --disableTelemetry option.`
+      : ''
+  }`
+    );
+
+    note(`We will run transforms on files matching the following ${
+      options.filePatterns.length > 1 ? 'patterns' : 'pattern'
+    }, ignoring any gitignored files:
+  ${options.filePatterns.join('\n')}
+  (You can change this by specifying the --filePatterns option)`);
+  });
 
   const cwd = options.cwd ?? process.cwd();
   const ignore =
@@ -43,60 +60,71 @@ ${options.filePatterns.join('\n')}
   );
 
   if (!options.skipGitChecks) {
-    await checkGitStatus();
+    await traceStep('check-git-status', checkGitStatus);
   }
 
   const packageJSON = await getPackageDotJson(cwd);
 
-  await checkIsInWorkspace(packageJSON);
+  await traceStep('check-in-workspace', () => checkIsInWorkspace(packageJSON));
 
   let targetSdk = options.sdk ?? detectSdk(packageJSON);
 
   const allTransformers = await getTransformers();
 
-  const applyAllTransformers = await abortIfCancelled(
-    select({
-      message: 'Do you want to apply all transformers, or only selected ones?',
-      options: [
-        { value: true, label: 'Apply all transformations.', hint: 'Recommended' },
-        { value: false, label: 'I want to select myself.' },
-      ],
-    })
+  const applyAllTransformers = await traceStep('ask-apply-all-transformers', async () =>
+    abortIfCancelled(
+      select({
+        message: 'Do you want to apply all transformers, or only selected ones?',
+        options: [
+          { value: true, label: 'Apply all transformations.', hint: 'Recommended' },
+          { value: false, label: 'I want to select myself.' },
+        ],
+      })
+    )
   );
+
+  Sentry.setTag('apply-all-transformers', applyAllTransformers);
 
   let transformers = allTransformers;
   if (!applyAllTransformers) {
-    const selectedTransformers = await abortIfCancelled(
-      multiselect({
-        message: 'Which transformers do you want to apply?',
-        options: allTransformers.map(transformer => {
-          return { value: transformer, label: transformer.name };
-        }),
-      })
+    const selectedTransformers = await traceStep('select-transformers', () =>
+      abortIfCancelled(
+        multiselect({
+          message: 'Which transformers do you want to apply?',
+          options: allTransformers.map(transformer => {
+            return { value: transformer, label: transformer.name };
+          }),
+        })
+      )
     );
 
     transformers = selectedTransformers;
   }
 
-  intro(`Applying ${transformers.length} transformer(s)...`);
+  log.step(`Applying ${transformers.length} transformer(s)...`);
 
-  for (const transformer of transformers) {
-    const s = spinner();
-    s.start(`Running transformer "${transformer.name}"...`);
+  await traceStep('run-transformers', async () => {
+    for (const transformer of transformers) {
+      const s = spinner();
+      s.start(`Running transformer "${transformer.name}"...`);
 
-    try {
-      await transformer.transform(files, { ...options, sdk: targetSdk });
-      s.stop(`Transformer "${transformer.name}" completed.`);
-    } catch (error) {
-      s.stop(`Transformer "${transformer.name}" failed to complete with error:`);
-      // eslint-disable-next-line no-console
-      console.error(error);
+      try {
+        await traceStep(transformer.name, () => transformer.transform(files, { ...options, sdk: targetSdk }));
+        s.stop(`Transformer "${transformer.name}" completed.`);
+      } catch (error) {
+        s.stop(`Transformer "${transformer.name}" failed to complete with error:`);
+        // eslint-disable-next-line no-console
+        console.error(error);
+      }
     }
-  }
+  });
 
-  await maybeRunPrettier(cwd, packageJSON);
+  await traceStep('prettier', () => maybeRunPrettier(cwd, packageJSON));
 
-  outro('All transformers completed!');
+  await traceStep('outro', () => {
+    log.success('All transformers completed!');
+    outro('Thank you for using @sentry/migr8!');
+  });
 }
 
 /**

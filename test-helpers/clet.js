@@ -19,7 +19,7 @@ export function defaultRunner(testAppName, { logLevel = LogLevel.INFO, timeout =
     .cwd(tmpPath, { init: true, clean: true })
     .debug(logLevel)
     .timeout(timeout)
-    .fork(getCliPath(), skipGitChecks ? ['--skipGitChecks=true'] : [], {});
+    .fork(getCliPath(), skipGitChecks ? ['--skipGitChecks=true', '--disableTelemetry'] : [], {});
 
   return res;
 }

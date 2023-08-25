@@ -6,6 +6,7 @@ export interface RunOptions {
   dry?: boolean;
   sdk?: string;
   cwd?: string;
+  disableTelemetry?: boolean;
 }
 
 export interface Transformer {
