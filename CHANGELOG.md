@@ -1,5 +1,6 @@
 # Changelog
 
+- feat: Add Svelte Config rewrite transformer
 - feat: Add telemetry data collection
 - fix: Fix incorrect deduping of named to namespace imports
 
