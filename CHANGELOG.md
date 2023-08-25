@@ -1,6 +1,7 @@
 # Changelog
 
-- fix incorrect deduping of named to namespace imports
+- feat: Add telemetry data collection
+- fix: Fix incorrect deduping of named to namespace imports
 
 ## 0.0.3
 
