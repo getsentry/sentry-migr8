@@ -65,6 +65,28 @@ module.exports = function (fileInfo, api, options) {
         return;
       }
 
+      // If we only have a single statement inside, we can avoid the block
+      if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
+        const statement = callbackBody.body[0];
+        // We check that we have a single statement that is e.g. scope.xxxx() only
+        if (
+          statement.expression.type === 'CallExpression' &&
+          statement.expression.callee.type === 'MemberExpression' &&
+          statement.expression.callee.object.type === 'Identifier' &&
+          statement.expression.callee.object.name === scopeVarName
+        ) {
+          const methodName = statement.expression.callee.property;
+
+          path.replace(
+            j.callExpression(
+              j.memberExpression(j.callExpression(j.identifier('getCurrentScope'), []), methodName),
+              statement.expression.arguments
+            )
+          );
+          return;
+        }
+      }
+
       path.replace(
         j.blockStatement([
           j.variableDeclaration('const', [
@@ -103,6 +125,31 @@ module.exports = function (fileInfo, api, options) {
 
       if (callbackBody.type !== 'BlockStatement') {
         return;
+      }
+
+      // If we only have a single statement inside, we can avoid the block
+      if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
+        const statement = callbackBody.body[0];
+        // We check that we have a single statement that is e.g. scope.xxxx() only
+        if (
+          statement.expression.type === 'CallExpression' &&
+          statement.expression.callee.type === 'MemberExpression' &&
+          statement.expression.callee.object.type === 'Identifier' &&
+          statement.expression.callee.object.name === scopeVarName
+        ) {
+          const methodName = statement.expression.callee.property;
+
+          path.replace(
+            j.callExpression(
+              j.memberExpression(
+                j.memberExpression(calleeObj, j.callExpression(j.identifier('getCurrentScope'), [])),
+                methodName
+              ),
+              statement.expression.arguments
+            )
+          );
+          return;
+        }
       }
 
       path.replace(

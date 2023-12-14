@@ -8,6 +8,13 @@ function orig() {
 function doSomething() {
   configureScope((scope) => {
     scope.setTag('aaa', 'aaa');
+  });
+  Sentry.configureScope((scope) => {
+    scope.setTag('ccc', 'ccc');
+  });
+
+  configureScope((scope) => {
+    scope.setTag('aaa', 'aaa');
     scope.setExtra('bbb', { bbb: 'bbb' });
   });
 

@@ -47,6 +47,9 @@ function orig() {
 }
 
 function doSomething() {
+  getCurrentScope().setTag('aaa', 'aaa');
+  Sentry.getCurrentScope().setTag('ccc', 'ccc');
+
   {
     const scope = getCurrentScope();
     scope.setTag('aaa', 'aaa');
