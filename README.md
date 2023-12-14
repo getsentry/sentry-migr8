@@ -94,6 +94,31 @@ but only a few that have been deprecated:
 - `Handlers.ExpressRequest` → `PolymorphicRequest` (Type export)
 - `Handlers.extractRequestData` → `extractRequestData`
 
+### Use getCurrentScope() instead of configureScope()
+
+Rewrites usages of `configureScope()` to use `getCurrentScope()` instead. Note that this will rewrite this to code
+blocks, which may not be the preferred syntax in all cases, but it's the only way to make this work somewhat reliably
+with avoiding variable clashes etc.
+
+This will rewrite:
+
+```js
+Sentry.configureScope(scope => {
+  scope.setTag('ccc', 'ccc');
+  scope.setExtra('ddd', { ddd: 'ddd' });
+});
+```
+
+to
+
+```js
+{
+  const scope = Sentry.getCurrentScope();
+  scope.setTag('ccc', 'ccc');
+  scope.setExtra('ddd', { ddd: 'ddd' });
+}
+```
+
 ### Tracing Config v7>v8
 
 Rewrites `tracePropagationTargets` and `tracingOrigins` from Integration-level config to root config on `Sentry.init()`.
