@@ -65,32 +65,35 @@ module.exports = function (fileInfo, api, options) {
         return;
       }
 
-      // If we only have a single statement inside, we can avoid the block
-      if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
-        const statement = callbackBody.body[0];
-        // We check that we have a single statement that is e.g. scope.xxxx() only
-        if (
-          statement.expression.type === 'CallExpression' &&
-          statement.expression.callee.type === 'MemberExpression' &&
-          statement.expression.callee.object.type === 'Identifier' &&
-          statement.expression.callee.object.name === scopeVarName
-        ) {
-          const methodName = statement.expression.callee.property;
+      const getScopeMethodName = 'getCurrentScope';
 
-          path.replace(
-            j.callExpression(
-              j.memberExpression(j.callExpression(j.identifier('getCurrentScope'), []), methodName),
-              statement.expression.arguments
-            )
-          );
-          return;
+      if (path.value.callee)
+        if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
+          // If we only have a single statement inside, we can avoid the block
+          const statement = callbackBody.body[0];
+          // We check that we have a single statement that is e.g. scope.xxxx() only
+          if (
+            statement.expression.type === 'CallExpression' &&
+            statement.expression.callee.type === 'MemberExpression' &&
+            statement.expression.callee.object.type === 'Identifier' &&
+            statement.expression.callee.object.name === scopeVarName
+          ) {
+            const methodName = statement.expression.callee.property;
+
+            path.replace(
+              j.callExpression(
+                j.memberExpression(j.callExpression(j.identifier(getScopeMethodName), []), methodName),
+                statement.expression.arguments
+              )
+            );
+            return;
+          }
         }
-      }
 
       path.replace(
         j.blockStatement([
           j.variableDeclaration('const', [
-            j.variableDeclarator(j.identifier(scopeVarName), j.callExpression(j.identifier('getCurrentScope'), [])),
+            j.variableDeclarator(j.identifier(scopeVarName), j.callExpression(j.identifier(getScopeMethodName), [])),
           ]),
           ...callbackBody.body,
         ])
@@ -127,6 +130,10 @@ module.exports = function (fileInfo, api, options) {
         return;
       }
 
+      // Very hacky, but we check if the callee (e.g. hub.configureScope() or getCurrentHub().configureScope())
+      // contains "hub", and if so, we use `getScope()` instead of `getCurrentScope()`
+      let getScopeMethodName = /hub/i.test(j(calleeObj).toSource()) ? 'getScope' : 'getCurrentScope';
+
       // If we only have a single statement inside, we can avoid the block
       if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
         const statement = callbackBody.body[0];
@@ -142,7 +149,7 @@ module.exports = function (fileInfo, api, options) {
           path.replace(
             j.callExpression(
               j.memberExpression(
-                j.memberExpression(calleeObj, j.callExpression(j.identifier('getCurrentScope'), [])),
+                j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), [])),
                 methodName
               ),
               statement.expression.arguments
@@ -157,7 +164,7 @@ module.exports = function (fileInfo, api, options) {
           j.variableDeclaration('const', [
             j.variableDeclarator(
               j.identifier(scopeVarName),
-              j.memberExpression(calleeObj, j.callExpression(j.identifier('getCurrentScope'), []))
+              j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), []))
             ),
           ]),
           ...callbackBody.body,

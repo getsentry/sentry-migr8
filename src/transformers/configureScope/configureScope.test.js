@@ -36,6 +36,7 @@ describe('transformers | configureScope', () => {
     const withImports = getDirFileContent(tmpDir, 'withImports.js');
     const withImportsTs = getDirFileContent(tmpDir, 'withImports.ts');
     const withRequire = getDirFileContent(tmpDir, 'withRequire.js');
+    const onHub = getDirFileContent(tmpDir, 'onHub.js');
 
     assertStringEquals(
       withImports,
@@ -72,6 +73,7 @@ function doSomething() {
 }
 `
     );
+
     assertStringEquals(
       withImportsTs,
       `import { getCurrentScope } from '@sentry/browser';
@@ -133,6 +135,44 @@ function doSomething() {
     const scope = Sentry.getCurrentScope();
     scope.setTag('ccc', 'ccc');
     scope.setExtra('ddd', { ddd: 'ddd' });
+  };
+}`
+    );
+
+    assertStringEquals(
+      onHub,
+      `import { getCurrentHub } from '@sentry/browser';
+import * as Sentry from '@sentry/browser';
+
+function orig() {
+  // do something
+}
+
+function doSomething() {
+  {
+    const scope = Sentry.getCurrentHub().getScope();
+    scope.setTag('aaa', 'aaa');
+    scope.setExtra('bbb', { bbb: 'bbb' });
+  };
+
+  {
+    const scope = getCurrentHub().getScope();
+    scope.setTag('aaa', 'aaa');
+    scope.setExtra('bbb', { bbb: 'bbb' });
+  };
+
+  const hub = Sentry.getCurrentHub();
+  {
+    const scope = hub.getScope();
+    scope.setTag('aaa', 'aaa');
+    scope.setExtra('bbb', { bbb: 'bbb' });
+  };
+
+  const currentHub = Sentry.getCurrentHub();
+  {
+    const scope = currentHub.getScope();
+    scope.setTag('aaa', 'aaa');
+    scope.setExtra('bbb', { bbb: 'bbb' });
   };
 }`
     );
