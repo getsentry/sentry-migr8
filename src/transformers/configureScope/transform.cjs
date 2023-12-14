@@ -60,35 +60,29 @@ module.exports = function (fileInfo, api, options) {
       }
 
       const callbackBody = callbackFn.body;
+      const getScopeMethodName = 'getCurrentScope';
+
+      // If we only have a single statement inside, we can avoid the block
+      // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
+      // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
+      const singleExpression = getExpression(callbackBody, scopeVarName);
+
+      if (singleExpression && singleExpression.callee.type === 'MemberExpression') {
+        path.replace(
+          j.callExpression(
+            j.memberExpression(
+              j.callExpression(j.identifier(getScopeMethodName), []),
+              singleExpression.callee.property
+            ),
+            singleExpression.arguments
+          )
+        );
+        return;
+      }
 
       if (callbackBody.type !== 'BlockStatement') {
         return;
       }
-
-      const getScopeMethodName = 'getCurrentScope';
-
-      if (path.value.callee)
-        if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
-          // If we only have a single statement inside, we can avoid the block
-          const statement = callbackBody.body[0];
-          // We check that we have a single statement that is e.g. scope.xxxx() only
-          if (
-            statement.expression.type === 'CallExpression' &&
-            statement.expression.callee.type === 'MemberExpression' &&
-            statement.expression.callee.object.type === 'Identifier' &&
-            statement.expression.callee.object.name === scopeVarName
-          ) {
-            const methodName = statement.expression.callee.property;
-
-            path.replace(
-              j.callExpression(
-                j.memberExpression(j.callExpression(j.identifier(getScopeMethodName), []), methodName),
-                statement.expression.arguments
-              )
-            );
-            return;
-          }
-        }
 
       path.replace(
         j.blockStatement([
@@ -126,37 +120,30 @@ module.exports = function (fileInfo, api, options) {
 
       const callbackBody = callbackFn.body;
 
-      if (callbackBody.type !== 'BlockStatement') {
-        return;
-      }
-
       // Very hacky, but we check if the callee (e.g. hub.configureScope() or getCurrentHub().configureScope())
       // contains "hub", and if so, we use `getScope()` instead of `getCurrentScope()`
       let getScopeMethodName = /hub/i.test(j(calleeObj).toSource()) ? 'getScope' : 'getCurrentScope';
 
       // If we only have a single statement inside, we can avoid the block
-      if (callbackBody.body.length === 1 && callbackBody.body[0].type === 'ExpressionStatement') {
-        const statement = callbackBody.body[0];
-        // We check that we have a single statement that is e.g. scope.xxxx() only
-        if (
-          statement.expression.type === 'CallExpression' &&
-          statement.expression.callee.type === 'MemberExpression' &&
-          statement.expression.callee.object.type === 'Identifier' &&
-          statement.expression.callee.object.name === scopeVarName
-        ) {
-          const methodName = statement.expression.callee.property;
+      // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
+      // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
+      const singleExpression = getExpression(callbackBody, scopeVarName);
 
-          path.replace(
-            j.callExpression(
-              j.memberExpression(
-                j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), [])),
-                methodName
-              ),
-              statement.expression.arguments
-            )
-          );
-          return;
-        }
+      if (singleExpression && singleExpression.callee.type === 'MemberExpression') {
+        path.replace(
+          j.callExpression(
+            j.memberExpression(
+              j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), [])),
+              singleExpression.callee.property
+            ),
+            singleExpression.arguments
+          )
+        );
+        return;
+      }
+
+      if (callbackBody.type !== 'BlockStatement') {
+        return;
       }
 
       path.replace(
@@ -180,3 +167,51 @@ module.exports = function (fileInfo, api, options) {
     return tree.toSource();
   });
 };
+
+/**
+ * This methods detects if the body of a function is only a single expression, and if so returns that.
+ * It handles both:
+ *
+ * ```
+ * configureScope(scope => scope.setTag());
+ * configureScope((scope) => {
+ *  scope.setTag();
+ * });
+ * ```
+ *
+ * Returns the single expression, if there is only one.
+ *
+ * @param {import('jscodeshift').FunctionExpression['body'] | import('jscodeshift').ArrowFunctionExpression['body']} callbackBody
+ * @param {string} scopeVarName
+ * @returns {import('jscodeshift').CallExpression | undefined}
+ */
+function getExpression(callbackBody, scopeVarName) {
+  // If we only have a single statement inside, we can avoid the block
+  // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
+  // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
+  if (
+    callbackBody.type === 'CallExpression' ||
+    (callbackBody.type === 'BlockStatement' &&
+      callbackBody.body.length === 1 &&
+      callbackBody.body[0].type === 'ExpressionStatement')
+  ) {
+    const expression =
+      callbackBody.type === 'CallExpression'
+        ? callbackBody
+        : callbackBody.body[0].type === 'ExpressionStatement' &&
+            callbackBody.body[0].expression.type === 'CallExpression'
+          ? callbackBody.body[0].expression
+          : undefined;
+    // We check that we have a single statement that is e.g. scope.xxxx() only
+    if (
+      expression &&
+      expression.callee.type === 'MemberExpression' &&
+      expression.callee.object.type === 'Identifier' &&
+      expression.callee.object.name === scopeVarName
+    ) {
+      return expression;
+    }
+  }
+
+  return undefined;
+}

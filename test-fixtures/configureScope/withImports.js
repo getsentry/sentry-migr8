@@ -29,4 +29,7 @@ function doSomething() {
     scope.setTag('ccc', 'ccc');
     scope.setExtra('ddd', { ddd: 'ddd' });
   });
+
+  configureScope(scope => scope.addAttachment({ filename: 'scope.file', data: 'great content!' }));
+  Sentry.configureScope(scope => scope.addAttachment({ filename: 'scope.file', data: 'great content!' }));
 }

@@ -70,8 +70,10 @@ function doSomething() {
     scope.setTag('ccc', 'ccc');
     scope.setExtra('ddd', { ddd: 'ddd' });
   };
-}
-`
+
+  getCurrentScope().addAttachment({ filename: 'scope.file', data: 'great content!' });
+  Sentry.getCurrentScope().addAttachment({ filename: 'scope.file', data: 'great content!' });
+}`
     );
 
     assertStringEquals(
