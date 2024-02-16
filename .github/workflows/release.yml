@@ -24,7 +24,7 @@ jobs:
       - name: Install Dependencies
         run: yarn install
       - name: Prepare release
-        uses: getsentry/action-prepare-release@lms/feat-craft-cfg-from-merge-target
+        uses: getsentry/action-prepare-release@lms/write-config-branch
         env:
           GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
         with:
