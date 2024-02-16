@@ -4,6 +4,10 @@
 - feat: Add telemetry data collection
 - fix: Fix incorrect deduping of named to namespace imports
 
+## 0.0.6
+
+- No documented changes.
+
 ## 0.0.5
 
 - No documented changes.
