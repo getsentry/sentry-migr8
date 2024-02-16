@@ -1,6 +1,6 @@
 {
   "name": "@sentry/migr8",
-  "version": "0.0.3",
+  "version": "5.0.11",
   "homepage": "https://github.com/getsentry/sentry-migr8",
   "repository": "https://github.com/getsentry/sentry-migr8",
   "description": "Run migrations for the Sentry JavaScript SDKs.",
