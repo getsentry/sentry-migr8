@@ -32,6 +32,13 @@ You can run `npx @sentry/migr8 --help` to get a list of available options.
 
 ## Transformations
 
+### Use functional integrations instead of integration classes
+
+This updates usage of class-based integrations to the new, functional style. For example:
+
+- `new BrowserTracing()` → `browserTracingIntegration()`
+- `new Sentry.Replay()` → `Sentry.replayIntegration()`
+
 ### Replay Config v7>v8
 
 This migrates deprecated replay configuration from v7 to v8. This includes:
