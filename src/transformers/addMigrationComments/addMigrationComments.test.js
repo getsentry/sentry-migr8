@@ -97,12 +97,10 @@ function doSomethingElse() {
       `import * as Sentry from '@sentry/browser';
 import { makeMain, Hub } from '@sentry/browser';
 
-function doSomething() {
-  // TODO(sentry): Use \`new Scope()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md
-  const hub = new Hub();
-  // TODO(sentry): Use \`setCurrentClient()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md
-  makeMain(hub);
-}
+// TODO(sentry): Use \`new Scope()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md
+const hub = new Hub();
+// TODO(sentry): Use \`setCurrentClient()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md
+makeMain(hub);
 
 function doSomethingElse() {
   // TODO(sentry): Use \`new Scope()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md
