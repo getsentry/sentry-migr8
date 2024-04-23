@@ -1,8 +1,6 @@
 # sentry-migr8
 
-HACKWEEK PROJECT - Migrate to the next JS SDK version
-
-**This Package is highly experimental! Use with Caution!**
+Migrate the usage of your Sentry SDK v7 to be v8 compatible.
 
 ## Usage
 
@@ -16,6 +14,8 @@ By default we run all transformations on all files in the directory, ignoring an
 
 If you work in a monorepo, make sure to run `@sentry/migr8` in each subpackage instead of the monorepo root, as
 otherwise we cannot update dependencies etc. correctly.
+
+migr8 runs on Node 18+.
 
 ### Options
 
