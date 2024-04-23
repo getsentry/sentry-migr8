@@ -78,8 +78,8 @@ Sentry.init({
 
 ### Remove deprecated packages
 
-Removes deprecated packages (`@sentry/hub`, `@sentry/tracing` and `@sentry/replay`) from your application. These are not
-needed anymore, and their exports can just be imported from your main SDK package instead.
+Removes deprecated packages (`@sentry/hub`, `@sentry/tracing`, `@sentry/integrations`, and `@sentry/replay`) from your
+application. These are not needed anymore, and their exports can just be imported from your main SDK package instead.
 
 ### Update SDK to latest version
 
@@ -159,3 +159,7 @@ Replaces imports from the deprecated `@sentry/replay` package with the newer imp
 ### Remove `@sentry/tracing` imports
 
 Replaces imports from the deprecated `@sentry/tracing` package with the newer imports.
+
+### Remove `@sentry/integrations` imports
+
+Replaces imports from the deprecated `@sentry/integrations` package with the newer imports.
