@@ -32,6 +32,12 @@ You can run `npx @sentry/migr8 --help` to get a list of available options.
 
 ## Transformations
 
+### Add migration comments
+
+There are certain things that migr8 cannot auto-fix for you. This is the case for things like `startTransaction()`,
+which cannot be replaced 1:1. This transform will try to identify the most common of these scenarios, and put comments
+into your code in places where you need to do something manually.
+
 ### Use functional integrations instead of integration classes
 
 This updates usage of class-based integrations to the new, functional style. For example:
