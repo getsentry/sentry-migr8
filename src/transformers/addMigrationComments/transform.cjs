@@ -27,6 +27,10 @@ module.exports = function (fileInfo, api) {
         'makeMain',
         'Use `setCurrentClient()` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md',
       ],
+      [
+        'getActiveTransaction',
+        'Use `getActiveSpan()` instead. If you use this only to start a child, use `startInactiveSpan({ onlyIfParent: true })` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md',
+      ],
     ]);
 
     // Find `xxx()` calls

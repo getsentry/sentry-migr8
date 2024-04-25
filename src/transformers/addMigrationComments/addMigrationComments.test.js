@@ -137,4 +137,35 @@ function doSomethingElse() {
 `
     );
   });
+
+  it('works with getActiveTransaction', async () => {
+    tmpDir = makeTmpDir(getFixturePath('addMigrationComments'));
+    const file = 'getActiveTransaction.js';
+    const files = [`${tmpDir}/${file}`];
+    await tracingConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `import * as Sentry from '@sentry/browser';
+import { getActiveTransaction } from '@sentry/browser';
+
+function doSomething() {
+  // TODO(sentry): Use \`getActiveSpan()\` instead. If you use this only to start a child, use \`startInactiveSpan({ onlyIfParent: true })\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
+  getActiveTransaction();
+}
+
+function doSomethingElse() {
+  // TODO(sentry): Use \`getActiveSpan()\` instead. If you use this only to start a child, use \`startInactiveSpan({ onlyIfParent: true })\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
+  const transaction = Sentry.getActiveTransaction();
+  transaction.finish();
+
+  const obj = {
+    // TODO(sentry): Use \`getActiveSpan()\` instead. If you use this only to start a child, use \`startInactiveSpan({ onlyIfParent: true })\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
+    transaction: Sentry.getActiveTransaction(),
+  };
+}`
+    );
+  });
 });
