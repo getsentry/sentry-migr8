@@ -1,4 +1,5 @@
 const { wrapJscodeshift } = require('../../utils/dom.cjs');
+const { addTodoComment } = require('../../utils/jscodeshift.cjs');
 
 /**
  * Adds comments for migrations that migr8 can't do automatically.
@@ -92,58 +93,3 @@ module.exports = function (fileInfo, api) {
     return hasChanges ? tree.toSource() : undefined;
   });
 };
-
-/**
- *
- * @param {import('jscodeshift')} j
- * @param {import('jscodeshift').ASTPath} path
- * @param {string} msg
- */
-function addTodoComment(j, path, msg) {
-  const commentPath = getCommentPath(path);
-
-  const type = commentPath.value.type;
-
-  if (
-    type !== 'CallExpression' &&
-    type !== 'VariableDeclaration' &&
-    type !== 'ObjectProperty' &&
-    type !== 'ExpressionStatement'
-  ) {
-    return;
-  }
-
-  const comments = (commentPath.value.comments = commentPath.value.comments || []);
-  const commentText = ` TODO(sentry): ${msg}`;
-  // Avoid adding the comment again if migr8 is run multiple times
-  if (!comments.some(comment => comment.type === 'CommentLine' && comment.value.trim() === commentText.trim())) {
-    comments.push(j.commentLine(commentText, true, true));
-  }
-}
-
-/**
- * Get the path where we want to attach the comment too.
- * Without this, sometimes the comment would be in a visually unpleasing place.
- *
- * @param {import('jscodeshift').ASTPath} path
- * @returns {import('jscodeshift').ASTPath}
- */
-function getCommentPath(path) {
-  // We try some combinations here that we special case:
-  // const x = foo();
-  if (path.parent.parent.value.type === 'VariableDeclaration') {
-    return path.parent.parent;
-  }
-
-  // { a: foo() }
-  if (path.parent.value.type === 'ObjectProperty') {
-    return path.parent;
-  }
-
-  // foo();
-  if (path.parent.value.type === 'ExpressionStatement') {
-    return path.parent;
-  }
-
-  return path;
-}

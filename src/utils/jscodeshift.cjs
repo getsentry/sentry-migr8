@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 // These are utils for the transform.cjs files, which cannot require .js (esm) files
 
 /**
@@ -320,7 +321,7 @@ function requiresPackage(path, packageName) {
  * @returns {boolean} True if it has replaced, else false
  */
 function replaceFunctionCalls(j, tree, source, packageName, functionMap) {
-  // If the file has no @sentry/nextjs import, nothing to do
+  // If the file has no @sentry/xxx import, nothing to do
   if (!hasSentryImportOrRequire(source, packageName)) {
     return false;
   }
@@ -362,6 +363,103 @@ function replaceFunctionCalls(j, tree, source, packageName, functionMap) {
 }
 
 /**
+ * Adds and/or removes imports to imported/required properties, e.g. import {this,that} from 'package';
+ *
+ * @param {import('jscodeshift').JSCodeshift} j
+ * @param {import('jscodeshift').Collection} tree
+ * @param {string} source
+ * @param {string} packageName
+ * @param {string[] | undefined} addImports
+ * @param {string[] | undefined} removeImports
+ * @returns {boolean} True if it has replaced, else false
+ */
+function modifyImports(j, tree, source, packageName, addImports = [], removeImports = []) {
+  // If the file has no @sentry/xxx import, nothing to do
+  if (!hasSentryImportOrRequire(source, packageName)) {
+    return false;
+  }
+
+  // Add/remove in import
+  addImports.forEach(importName => {
+    let isAdded = false;
+
+    tree.find(j.ImportDeclaration, { source: { type: 'StringLiteral', value: packageName } }).forEach(path => {
+      let specifiers = path.value.specifiers || [];
+
+      if (
+        !isAdded &&
+        !specifiers.some(specifier => specifier.type === 'ImportSpecifier' && specifier.imported.name === importName)
+      ) {
+        specifiers.push(j.importSpecifier(j.identifier(importName)));
+        isAdded = true;
+      }
+
+      removeImports.forEach(importName => {
+        specifiers = specifiers.filter(
+          specifier => specifier.type !== 'ImportSpecifier' || specifier.imported.name !== importName
+        );
+      });
+
+      path.value.specifiers = specifiers;
+    });
+  });
+
+  // Add/remove in require()
+  tree
+    .find(j.VariableDeclaration, {
+      declarations: [
+        {
+          type: 'VariableDeclarator',
+          init: {
+            type: 'CallExpression',
+            callee: { type: 'Identifier', name: 'require' },
+            arguments: [{ value: packageName }],
+          },
+        },
+      ],
+    })
+    .forEach(path => {
+      if (
+        path.value.declarations[0]?.type === 'VariableDeclarator' &&
+        path.value.declarations[0]?.id.type === 'ObjectPattern'
+      ) {
+        const requireVars = path.value.declarations[0].id;
+        let properties = requireVars.properties;
+
+        addImports.forEach(importName => {
+          if (
+            !properties.some(
+              property =>
+                property.type === 'ObjectProperty' &&
+                property.key.type === 'Identifier' &&
+                property.key.name === importName
+            )
+          ) {
+            const prop = j.objectProperty(j.identifier(importName), j.identifier(importName));
+            prop.shorthand = true;
+            properties.push(prop);
+          }
+        });
+
+        removeImports.forEach(importName => {
+          properties = properties.filter(
+            property =>
+              property.type !== 'ObjectProperty' ||
+              property.key.type !== 'Identifier' ||
+              property.key.name !== importName
+          );
+        });
+
+        requireVars.properties = properties;
+      }
+    });
+
+  dedupeImportedIdentifiers(j, tree, packageName);
+
+  return true;
+}
+
+/**
  * Replace the names of imported/required properties, e.g. import {this,that} from 'package';
  *
  * @param {import('jscodeshift').JSCodeshift} j
@@ -372,7 +470,7 @@ function replaceFunctionCalls(j, tree, source, packageName, functionMap) {
  * @returns {boolean} True if it has replaced, else false
  */
 function replaceImported(j, tree, source, packageName, importMap) {
-  // If the file has no @sentry/nextjs import, nothing to do
+  // If the file has no @sentry/xxx import, nothing to do
   if (!hasSentryImportOrRequire(source, packageName)) {
     return false;
   }
@@ -455,6 +553,62 @@ function replaceImported(j, tree, source, packageName, importMap) {
   return true;
 }
 
+/**
+ * Add a comment to a the given path.
+ *
+ * @param {import('jscodeshift')} j
+ * @param {import('jscodeshift').ASTPath} path
+ * @param {string} msg
+ */
+function addTodoComment(j, path, msg) {
+  const commentPath = getCommentPath(path);
+
+  const type = commentPath.value.type;
+
+  if (
+    type !== 'CallExpression' &&
+    type !== 'VariableDeclaration' &&
+    type !== 'ObjectProperty' &&
+    type !== 'ExpressionStatement'
+  ) {
+    return;
+  }
+
+  const comments = (commentPath.value.comments = commentPath.value.comments || []);
+  const commentText = ` TODO(sentry): ${msg}`;
+  // Avoid adding the comment again if migr8 is run multiple times
+  if (!comments.some(comment => comment.type === 'CommentLine' && comment.value.trim() === commentText.trim())) {
+    comments.push(j.commentLine(commentText, true, true));
+  }
+}
+
+/**
+ * Get the path where we want to attach the comment too.
+ * Without this, sometimes the comment would be in a visually unpleasing place.
+ *
+ * @param {import('jscodeshift').ASTPath} path
+ * @returns {import('jscodeshift').ASTPath}
+ */
+function getCommentPath(path) {
+  // We try some combinations here that we special case:
+  // const x = foo();
+  if (path.parent.parent.value.type === 'VariableDeclaration') {
+    return path.parent.parent;
+  }
+
+  // { a: foo() }
+  if (path.parent.value.type === 'ObjectProperty') {
+    return path.parent;
+  }
+
+  // foo();
+  if (path.parent.value.type === 'ExpressionStatement') {
+    return path.parent;
+  }
+
+  return path;
+}
+
 module.exports = {
   hasSentryImportOrRequire,
   rewriteCjsRequires,
@@ -463,6 +617,8 @@ module.exports = {
   getSentryInitExpression,
   replaceFunctionCalls,
   replaceImported,
+  modifyImports,
   requiresPackage,
   isCjsRequireCall,
+  addTodoComment,
 };
