@@ -71,7 +71,6 @@ describe('transformers | removeDeprecatedPackages', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/integrations": "~7.54.0",
     "@sentry/react": "~7.54.0",
     "is-even": "1.0.0"
   },
@@ -92,7 +91,6 @@ describe('transformers | removeDeprecatedPackages', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/integrations": "~7.54.0",
     "is-even": "1.0.0"
   },
   "devDependencies": {
@@ -113,7 +111,6 @@ describe('transformers | removeDeprecatedPackages', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/integrations": "~7.54.0",
     "@sentry/react": "~7.54.0",
     "is-even": "1.0.0"
   },
@@ -134,7 +131,6 @@ describe('transformers | removeDeprecatedPackages', () => {
       actual,
       `{
   "dependencies": {
-    "@sentry/integrations": "~7.54.0",
     "@sentry/react": "~7.54.0",
     "is-even": "1.0.0"
   },

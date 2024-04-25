@@ -16,14 +16,7 @@ const APIS_ONLY_IN_CORE = [
 ];
 
 /**
- * Previously, the `Replay` integration needed to be installed and imported
- * from a separate package (`@sentry/replay`). This is no longer necessary
- * with more recent SDK versions, where we export the integration directly
- * from the (browser) SDK packages.
- *
- * TODO: CJS!!
- *
- * This transform rewrites imports from `@sentry/replay` to be imported from the SDK package.
+ * This transform rewrites imports from `@sentry/hub` to be imported from the SDK package.
  *
  * @param {import('jscodeshift').FileInfo} fileInfo
  * @param {import('jscodeshift').API} api

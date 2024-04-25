@@ -5,7 +5,7 @@ import { log } from '@clack/prompts';
 import { getPackageDotJson, debugLog, debugError } from '../../utils/clackUtils.js';
 import { getPackageManagerAPI } from '../../utils/packageManager.js';
 
-const PACKAGES_TO_REMOVE = ['@sentry/tracing', '@sentry/replay', '@sentry/hub'];
+const PACKAGES_TO_REMOVE = ['@sentry/tracing', '@sentry/replay', '@sentry/hub', '@sentry/integrations'];
 
 /**
  * @type {import('types').Transformer}
