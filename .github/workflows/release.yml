@@ -21,8 +21,21 @@ jobs:
         with:
           token: ${{ secrets.GH_RELEASE_PAT }}
           fetch-depth: 0
-      - name: Install Dependencies
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          cache: pnpm
+
+      - name: Install dependencies
         run: pnpm install
+
       - name: Prepare release
         uses: getsentry/action-prepare-release@lms/write-config-branch
         env:
