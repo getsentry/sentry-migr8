@@ -1,12 +1,27 @@
 # Changelog
 
-- feat: Add Svelte Config rewrite transformer
-- feat: Add telemetry data collection
-- fix: Fix incorrect deduping of named to namespace imports
+## 0.1.0
+
+- feat: Add transform for hub methods (#35)
+- fix: Avoid adding comments multiple times & touching unchanged files (#34)
+- fix: Ensure we are properly type safe (#33)
+- feat: Add comment for `getActiveTransaction()` (#30)
+- build: Bump all deps to latest (#31)
+- fix: Fix false positives for comment lookup (#32)
+- feat: Add transform to remove `@sentry/integrations` (#23)
+- feat: Add migration comment transform (#27)
+- feat: Transform class integrations into functional integrations (#21)
+
+## 0.0.4
+
+- feat: Add configureScope transformer (#19) by @mydea
+- feat: add Svelte Config rewrite transformer (dfa126e) by @Lms24
+- fix incorrect deduping of named to namespace imports (2d48de4) by @Lms24
+- Add ignoreFilePatters option (a6801ac) by @mydea
 
 ## 0.0.3
 
-- Handle *.vue and *.svelte files
+- Handle _.vue and _.svelte files
 - Apply prettier after modifications
 - Minor fixes & improvements
 
