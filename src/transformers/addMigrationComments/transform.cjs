@@ -14,15 +14,20 @@ module.exports = function (fileInfo, api) {
   return wrapJscodeshift(j, source, fileName, (j, source) => {
     const tree = j(source);
 
-    /** @type {Record<string,string>} */
-    const methodCommentMap = {
-      startTransaction:
+    const methodCommentMap = new Map([
+      [
+        'startTransaction',
         'Use `startInactiveSpan()` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md',
-      startChild:
+      ],
+      [
+        'startChild',
         'Use `startInactiveSpan()` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md',
-      makeMain:
+      ],
+      [
+        'makeMain',
         'Use `setCurrentClient()` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-initializing.md',
-    };
+      ],
+    ]);
 
     // Find `xxx()` calls
     tree
@@ -33,7 +38,7 @@ module.exports = function (fileInfo, api) {
       })
       .forEach(path => {
         if (path.value.callee.type === 'Identifier') {
-          const comment = methodCommentMap[path.value.callee.name];
+          const comment = methodCommentMap.get(path.value.callee.name);
           if (comment) {
             addTodoComment(j, path, comment);
           }
@@ -52,7 +57,7 @@ module.exports = function (fileInfo, api) {
       })
       .forEach(path => {
         if (path.value.callee.type === 'MemberExpression' && path.value.callee.property.type === 'Identifier') {
-          const comment = methodCommentMap[path.value.callee.property.name];
+          const comment = methodCommentMap.get(path.value.callee.property.name);
           if (comment) {
             addTodoComment(j, path, comment);
           }

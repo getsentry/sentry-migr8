@@ -60,6 +60,32 @@ function doSomethingElse() {
     );
   });
 
+  it('works with TS', async () => {
+    tmpDir = makeTmpDir(getFixturePath('addMigrationComments'));
+    const file = 'noFalsePositives.ts';
+    const files = [`${tmpDir}/${file}`];
+    await tracingConfigTransformer.transform(files, { filePatterns: [] });
+
+    const actual = getDirFileContent(tmpDir, file);
+
+    assertStringEquals(
+      actual,
+      `function indexMembersByProject(members: Member[]): IndexedMembersByProject {
+  return members.reduce<IndexedMembersByProject>((acc, member) => {
+    for (const project of member.projects) {
+      if (!acc.hasOwnProperty(project)) {
+        acc[project] = [];
+      }
+      if (member.user) {
+        acc[project].push(member.user);
+      }
+    }
+    return acc;
+  }, {});
+}`
+    );
+  });
+
   it('works with span.startChild', async () => {
     tmpDir = makeTmpDir(getFixturePath('addMigrationComments'));
     const file = 'startChild.js';
