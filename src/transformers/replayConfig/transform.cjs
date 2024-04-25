@@ -156,7 +156,7 @@ module.exports = function (fileInfo, api) {
     newReplayExpression.forEach(path => {
       const arg = path.value.arguments[0];
 
-      if (arg.type !== 'ObjectExpression') {
+      if (!arg || arg.type !== 'ObjectExpression') {
         return;
       }
 
@@ -179,7 +179,7 @@ module.exports = function (fileInfo, api) {
       sentryInitExpression.forEach(path => {
         const arg = path.value.arguments[0];
 
-        if (arg.type !== 'ObjectExpression') {
+        if (!arg || arg.type !== 'ObjectExpression') {
           return;
         }
 

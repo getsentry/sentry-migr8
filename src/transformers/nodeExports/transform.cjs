@@ -141,8 +141,8 @@ module.exports = function (fileInfo, api) {
       })
       .forEach(path => {
         if (
-          path.value.declarations[0].type === 'VariableDeclarator' &&
-          path.value.declarations[0].id.type === 'ObjectPattern'
+          path.value.declarations[0]?.type === 'VariableDeclarator' &&
+          path.value.declarations[0]?.id.type === 'ObjectPattern'
         ) {
           const requireVars = path.value.declarations[0].id;
 

@@ -135,7 +135,7 @@ function removeImportedIdentifiers(j, tree, identifiers) {
       let pos = 0;
       while (pos < specifiers.length) {
         const specifier = specifiers[pos];
-        if (specifier.type !== 'ImportSpecifier' || !specifier.local) {
+        if (!specifier || specifier.type !== 'ImportSpecifier' || !specifier.local) {
           return;
         }
 
@@ -159,7 +159,7 @@ function removeImportedIdentifiers(j, tree, identifiers) {
     .find(j.VariableDeclaration)
     .filter(
       path =>
-        path.value.declarations[0].type === 'VariableDeclarator' &&
+        path.value.declarations[0]?.type === 'VariableDeclarator' &&
         path.value.declarations[0].init?.type === 'CallExpression' &&
         path.value.declarations[0].init?.callee.type === 'Identifier' &&
         path.value.declarations[0].init?.callee.name === 'require' &&
@@ -169,7 +169,7 @@ function removeImportedIdentifiers(j, tree, identifiers) {
     )
     .forEach(path => {
       if (
-        path.value.declarations[0].type === 'VariableDeclarator' &&
+        path.value.declarations[0]?.type === 'VariableDeclarator' &&
         path.value.declarations[0].id.type === 'ObjectPattern'
       ) {
         const requireVars = path.value.declarations[0].id;
@@ -178,7 +178,7 @@ function removeImportedIdentifiers(j, tree, identifiers) {
         let pos = 0;
         while (pos < properties.length) {
           const prop = properties[pos];
-          if (prop.type !== 'ObjectProperty' || prop.value.type !== 'Identifier') {
+          if (!prop || prop.type !== 'ObjectProperty' || prop.value.type !== 'Identifier') {
             return;
           }
 

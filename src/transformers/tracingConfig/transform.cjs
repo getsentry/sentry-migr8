@@ -96,6 +96,7 @@ function fixTracePropagationTargets(j, sentryInit, newExpression) {
         const arg = path.value.arguments[0];
 
         if (
+          !arg ||
           arg.type !== 'ObjectExpression' ||
           // Already has targets, skip...
           arg.properties.some(

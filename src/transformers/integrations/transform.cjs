@@ -201,7 +201,7 @@ module.exports = function (fileInfo, api, options) {
             declaration.init.callee.type === 'Identifier' &&
             declaration.init.callee.name === 'require' &&
             declaration.init.arguments.length === 1 &&
-            declaration.init.arguments[0].type === 'StringLiteral' &&
+            declaration.init.arguments[0]?.type === 'StringLiteral' &&
             declaration.init.arguments[0].value === sdk
           );
         });
