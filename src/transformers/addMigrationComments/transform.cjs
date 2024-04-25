@@ -14,6 +14,8 @@ module.exports = function (fileInfo, api) {
   return wrapJscodeshift(j, source, fileName, (j, source) => {
     const tree = j(source);
 
+    let hasChanges = false;
+
     const methodCommentMap = new Map([
       [
         'startTransaction',
@@ -44,6 +46,7 @@ module.exports = function (fileInfo, api) {
         if (path.value.callee.type === 'Identifier') {
           const comment = methodCommentMap.get(path.value.callee.name);
           if (comment) {
+            hasChanges = true;
             addTodoComment(j, path, comment);
           }
         }
@@ -63,6 +66,7 @@ module.exports = function (fileInfo, api) {
         if (path.value.callee.type === 'MemberExpression' && path.value.callee.property.type === 'Identifier') {
           const comment = methodCommentMap.get(path.value.callee.property.name);
           if (comment) {
+            hasChanges = true;
             addTodoComment(j, path, comment);
           }
         }
@@ -76,6 +80,7 @@ module.exports = function (fileInfo, api) {
           path.value.callee.property.type === 'Identifier' &&
           path.value.callee.property.name === 'Hub')
       ) {
+        hasChanges = true;
         addTodoComment(
           j,
           path,
@@ -84,7 +89,7 @@ module.exports = function (fileInfo, api) {
       }
     });
 
-    return tree.toSource();
+    return hasChanges ? tree.toSource() : undefined;
   });
 };
 
@@ -99,12 +104,21 @@ function addTodoComment(j, path, msg) {
 
   const type = commentPath.value.type;
 
-  if (type !== 'CallExpression' && type !== 'VariableDeclaration' && type !== 'ObjectProperty') {
+  if (
+    type !== 'CallExpression' &&
+    type !== 'VariableDeclaration' &&
+    type !== 'ObjectProperty' &&
+    type !== 'ExpressionStatement'
+  ) {
     return;
   }
 
   const comments = (commentPath.value.comments = commentPath.value.comments || []);
-  comments.push(j.commentLine(` TODO(sentry): ${msg}`, true, true));
+  const commentText = ` TODO(sentry): ${msg}`;
+  // Avoid adding the comment again if migr8 is run multiple times
+  if (!comments.some(comment => comment.type === 'CommentLine' && comment.value.trim() === commentText.trim())) {
+    comments.push(j.commentLine(commentText, true, true));
+  }
 }
 
 /**
@@ -123,6 +137,11 @@ function getCommentPath(path) {
 
   // { a: foo() }
   if (path.parent.value.type === 'ObjectProperty') {
+    return path.parent;
+  }
+
+  // foo();
+  if (path.parent.value.type === 'ExpressionStatement') {
     return path.parent;
   }
 
