@@ -48,7 +48,7 @@ module.exports = function (fileInfo, api, options) {
       }
 
       const callbackFn = path.value.arguments[0];
-      if (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression') {
+      if (!callbackFn || (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression')) {
         return;
       }
 
@@ -107,7 +107,7 @@ module.exports = function (fileInfo, api, options) {
       const calleeObj = path.value.callee.object;
 
       const callbackFn = path.value.arguments[0];
-      if (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression') {
+      if (!callbackFn || (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression')) {
         return;
       }
 
@@ -193,15 +193,15 @@ function getExpression(callbackBody, scopeVarName) {
     callbackBody.type === 'CallExpression' ||
     (callbackBody.type === 'BlockStatement' &&
       callbackBody.body.length === 1 &&
-      callbackBody.body[0].type === 'ExpressionStatement')
+      callbackBody.body[0]?.type === 'ExpressionStatement')
   ) {
     const expression =
       callbackBody.type === 'CallExpression'
         ? callbackBody
-        : callbackBody.body[0].type === 'ExpressionStatement' &&
-            callbackBody.body[0].expression.type === 'CallExpression'
-          ? callbackBody.body[0].expression
-          : undefined;
+        : callbackBody.body[0]?.type === 'ExpressionStatement' &&
+          callbackBody.body[0].expression.type === 'CallExpression'
+        ? callbackBody.body[0].expression
+        : undefined;
     // We check that we have a single statement that is e.g. scope.xxxx() only
     if (
       expression &&

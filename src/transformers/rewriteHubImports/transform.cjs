@@ -79,7 +79,7 @@ module.exports = function transform(fileInfo, api, options) {
     findHubImports(root, j).forEach(importPath => {
       if (
         importPath.node.specifiers?.length !== 1 ||
-        importPath.node.specifiers[0].type !== 'ImportNamespaceSpecifier'
+        importPath.node.specifiers[0]?.type !== 'ImportNamespaceSpecifier'
       ) {
         return;
       }

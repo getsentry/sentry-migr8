@@ -62,7 +62,7 @@ function rewriteCjsRequires(oldPackage, newPackage, root, j) {
     .filter(path => isCjsRequireCall(path) && requiresPackage(path, oldPackage))
     .forEach(path => {
       const firstArg = path.node.arguments[0];
-      if (firstArg.type === 'StringLiteral') {
+      if (firstArg && firstArg.type === 'StringLiteral') {
         firstArg.value = newPackage;
         rewroteSomething = true;
       }
@@ -111,7 +111,7 @@ function dedupeImportedIdentifiers(j, tree, packageName) {
     let pos = 0;
     while (pos < specifiers.length) {
       const specifier = specifiers[pos];
-      if (specifier.type !== 'ImportSpecifier' || !specifier.local) {
+      if (!specifier || specifier.type !== 'ImportSpecifier' || !specifier.local) {
         return;
       }
 
@@ -144,8 +144,8 @@ function dedupeImportedIdentifiers(j, tree, packageName) {
     })
     .forEach(path => {
       if (
-        path.value.declarations[0].type === 'VariableDeclarator' &&
-        path.value.declarations[0].id.type === 'ObjectPattern'
+        path.value.declarations[0]?.type === 'VariableDeclarator' &&
+        path.value.declarations[0]?.id.type === 'ObjectPattern'
       ) {
         const requireVars = path.value.declarations[0].id;
         const seen = new Set();
@@ -154,7 +154,7 @@ function dedupeImportedIdentifiers(j, tree, packageName) {
         let pos = 0;
         while (pos < properties.length) {
           const prop = properties[pos];
-          if (prop.type !== 'ObjectProperty' || prop.value.type !== 'Identifier') {
+          if (!prop || prop.type !== 'ObjectProperty' || prop.value.type !== 'Identifier') {
             return;
           }
 
@@ -187,13 +187,13 @@ function dedupeImportStatements(packageName, root, j) {
   const packageImports = root.find(j.ImportDeclaration).filter(path => path.node.source.value === packageName);
 
   const packageNameSpaceImports = packageImports.filter(
-    p => p.node.specifiers?.length === 1 && p.node.specifiers[0].type === 'ImportNamespaceSpecifier'
+    p => p.node.specifiers?.length === 1 && p.node.specifiers[0]?.type === 'ImportNamespaceSpecifier'
   );
   /** { @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration> | undefined */
   const packageNamespaceImport = packageNameSpaceImports.length && packageNameSpaceImports.get(0);
 
   if (packageNamespaceImport) {
-    const packageNamespace = packageNamespaceImport.node.specifiers?.[0].local?.name;
+    const packageNamespace = packageNamespaceImport.node.specifiers?.[0]?.local?.name;
     if (!packageNamespace) {
       return;
     }
@@ -275,7 +275,7 @@ function dedupeImportStatements(packageName, root, j) {
       const otherPackageImport = otherPackageImportPath.node;
       const isNamespaceOldPackageImport =
         otherPackageImport.specifiers?.length === 1 &&
-        otherPackageImport.specifiers[0].type === 'ImportNamespaceSpecifier';
+        otherPackageImport.specifiers[0]?.type === 'ImportNamespaceSpecifier';
 
       // Case 2a: Old package import is not a namespace import
       // e.g. import { BrowserTracing } from '@sentry/tracing';
@@ -308,7 +308,7 @@ function isCjsRequireCall(path) {
  */
 function requiresPackage(path, packageName) {
   const args = path.node.arguments;
-  return args.length === 1 && args[0].type === 'StringLiteral' && args[0].value === packageName;
+  return args.length === 1 && args[0]?.type === 'StringLiteral' && args[0].value === packageName;
 }
 
 /**
@@ -419,8 +419,8 @@ function replaceImported(j, tree, source, packageName, importMap) {
     })
     .forEach(path => {
       if (
-        path.value.declarations[0].type === 'VariableDeclarator' &&
-        path.value.declarations[0].id.type === 'ObjectPattern'
+        path.value.declarations[0]?.type === 'VariableDeclarator' &&
+        path.value.declarations[0]?.id.type === 'ObjectPattern'
       ) {
         const requireVars = path.value.declarations[0].id;
 
