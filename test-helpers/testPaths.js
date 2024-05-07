@@ -43,3 +43,14 @@ export function getDirFileContent(dir, fileName) {
   const fullPath = path.join(dir, fileName);
   return readFileSync(fullPath, 'utf-8');
 }
+/**
+ *
+ *
+ * @param {string} dir
+ * @param {string} fileName
+ * @returns {boolean}
+ */
+export function fileExists(dir, fileName) {
+  const fullPath = path.join(dir, fileName);
+  return existsSync(fullPath);
+}
