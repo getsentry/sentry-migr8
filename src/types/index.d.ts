@@ -7,6 +7,12 @@ export interface RunOptions {
   sdk?: string;
   cwd?: string;
   disableTelemetry?: boolean;
+  transformOptions?: {
+    /**
+     * Whether to add a top level `import "instrumentation.js"` statement to the file
+     */
+    'nodeInstrumentFile:add-import'?: boolean;
+  };
 }
 
 export interface Transformer {
@@ -15,6 +21,12 @@ export interface Transformer {
    * Will be used in the selection menu or when printing transformer-specific log messages.
    */
   name: string;
+
+  /**
+   * Whether the transformer requires user input to run
+   * If true, the transformer won't show a spinner to avoid cluttering the spinner with user prompts.
+   */
+  requiresUserInput?: boolean;
 
   /**
    * Takes a list of files and applies whatever transformation/modification is necessary

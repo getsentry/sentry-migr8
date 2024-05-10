@@ -49,10 +49,10 @@ module.exports = function (fileInfo, api, options) {
 
     // Create new file
     const instrumentFileName = `instrument${extension}`;
-    const instrunmentFilePath = path.join(folder, instrumentFileName);
+    const instrumentFilePath = path.join(folder, instrumentFileName);
 
     // If file already exists, we skip
-    if (fs.existsSync(instrunmentFilePath)) {
+    if (fs.existsSync(instrumentFilePath)) {
       return undefined;
     }
 
@@ -92,18 +92,20 @@ module.exports = function (fileInfo, api, options) {
     removeUnusedImports(j, instrumentFile2);
     removeUnusedRequires(j, instrumentFile2);
 
-    fs.writeFileSync(instrunmentFilePath, instrumentFile2.toSource());
+    fs.writeFileSync(instrumentFilePath, instrumentFile2.toSource());
 
     // Add import as first thing
     // Note: We import/require without file extension, this is the most common way
     // Potential improvement:
     // We could check if the file has any relative imports / require and see if that uses file extension
-    if (sentryImport.length > 0) {
-      tree.get().node.program.body.unshift(j.importDeclaration([], j.literal('./instrument')));
-    } else {
-      // Else we add a require
-      const requireStatement = j.callExpression(j.identifier('require'), [j.literal('./instrument')]);
-      tree.get().node.program.body.unshift(j.expressionStatement(requireStatement));
+    if (options.sentry.transformOptions?.['nodeInstrumentFile:add-import']) {
+      if (sentryImport.length > 0) {
+        tree.get().node.program.body.unshift(j.importDeclaration([], j.literal('./instrument')));
+      } else {
+        // Else we add a require
+        const requireStatement = j.callExpression(j.identifier('require'), [j.literal('./instrument')]);
+        tree.get().node.program.body.unshift(j.expressionStatement(requireStatement));
+      }
     }
 
     // Remove from original file
