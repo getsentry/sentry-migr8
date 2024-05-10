@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import tracingConfigTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | tracingConfig', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(tracingConfigTransformer.name, 'Add migration comments');
+    expect(tracingConfigTransformer.name).toEqual('Add migration comments');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | tracingConfig', () => {
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with startTransaction', async () => {
@@ -37,8 +36,7 @@ describe('transformers | tracingConfig', () => {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/browser';
 import { startTransaction } from '@sentry/browser';
 
@@ -56,7 +54,8 @@ function doSomethingElse() {
     // TODO(sentry): Use \`startInactiveSpan()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
     transaction: Sentry.startTransaction(),
   };
-}`
+}
+`
     );
   });
 
@@ -68,8 +67,7 @@ function doSomethingElse() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `function indexMembersByProject(members: Member[]): IndexedMembersByProject {
   return members.reduce<IndexedMembersByProject>((acc, member) => {
     for (const project of member.projects) {
@@ -82,7 +80,8 @@ function doSomethingElse() {
     }
     return acc;
   }, {});
-}`
+}
+`
     );
   });
 
@@ -94,9 +93,9 @@ function doSomethingElse() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
-      `function doSomething(span) {
+    expect(actual).toEqual(
+      `
+function doSomething(span) {
   // TODO(sentry): Use \`startInactiveSpan()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
   span.startChild();
 }
@@ -106,7 +105,8 @@ function doSomethingElse() {
   // TODO(sentry): Use \`startInactiveSpan()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
   transaction.startChild().end();
   transaction.finish();
-}`
+}
+`
     );
   });
 
@@ -118,8 +118,7 @@ function doSomethingElse() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/browser';
 import { makeMain, Hub } from '@sentry/browser';
 
@@ -146,8 +145,7 @@ function doSomethingElse() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/browser';
 import { getActiveTransaction } from '@sentry/browser';
 
@@ -165,7 +163,8 @@ function doSomethingElse() {
     // TODO(sentry): Use \`getActiveSpan()\` instead. If you use this only to start a child, use \`startInactiveSpan({ onlyIfParent: true })\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
     transaction: Sentry.getActiveTransaction(),
   };
-}`
+}
+`
     );
   });
 
@@ -177,8 +176,7 @@ function doSomethingElse() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/browser';
 import { startTransaction } from '@sentry/browser';
 
@@ -196,7 +194,8 @@ function doSomethingElse() {
     // TODO(sentry): Use \`startInactiveSpan()\` instead - see https://github.com/getsentry/sentry-javascript/blob/develop/docs/v8-new-performance-apis.md
     transaction: Sentry.startTransaction(),
   };
-}`
+}
+`
     );
   });
 });

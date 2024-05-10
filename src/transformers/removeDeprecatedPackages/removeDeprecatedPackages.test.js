@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import sdkLatestVersionTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | removeDeprecatedPackages', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(sdkLatestVersionTransformer.name, 'Remove deprecated packages');
+    expect(sdkLatestVersionTransformer.name).toEqual('Remove deprecated packages');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([tmpDir], { filePatterns: [], cwd: tmpDir });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with no sentry deps files', async () => {
@@ -34,8 +33,7 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([tmpDir], { filePatterns: [], cwd: tmpDir });
 
     const actual = getDirFileContent(tmpDir, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "is-even": "1.0.0"
@@ -43,7 +41,8 @@ describe('transformers | removeDeprecatedPackages', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -53,11 +52,11 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
  "name": "no deps"
-}`
+}
+`
     );
   });
 
@@ -67,8 +66,7 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd, sdk: '@sentry/react' });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/react": "~7.54.0",
@@ -77,7 +75,8 @@ describe('transformers | removeDeprecatedPackages', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -87,8 +86,7 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "is-even": "1.0.0"
@@ -97,7 +95,8 @@ describe('transformers | removeDeprecatedPackages', () => {
     "@sentry/react": "~7.54.0",
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -107,8 +106,7 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/react": "~7.54.0",
@@ -117,7 +115,8 @@ describe('transformers | removeDeprecatedPackages', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -127,8 +126,7 @@ describe('transformers | removeDeprecatedPackages', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/react": "~7.54.0",
@@ -137,7 +135,8 @@ describe('transformers | removeDeprecatedPackages', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 });

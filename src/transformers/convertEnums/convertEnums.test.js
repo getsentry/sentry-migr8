@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import convertEnumsTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | utilExports', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(convertEnumsTransformer.name, 'Convert Enums to String Literals');
+    expect(convertEnumsTransformer.name, 'Convert Enums to String Literals');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | utilExports', () => {
     await convertEnumsTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
@@ -37,8 +36,7 @@ describe('transformers | utilExports', () => {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { other } from '@sentry/browser';
 import * as Sentry from '@sentry/browser';
 
@@ -48,7 +46,8 @@ function doSomething() {
   const c = "debug";
   const d = "failed_precondition";
   const x = other();
-}`
+}
+`
     );
   });
 
@@ -60,8 +59,7 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { other } from '@sentry/browser';
 import * as Sentry from '@sentry/browser';
 
@@ -76,7 +74,8 @@ function doSomething() {
 enum SpanStatus {
   Fatal = 'fatal',
   UnknownError = 'unknown_error',
-}`
+}
+`
     );
   });
 
@@ -88,8 +87,7 @@ enum SpanStatus {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const {
   other
 } = require('@sentry/browser');
@@ -101,7 +99,8 @@ function doSomething() {
   const c = "debug";
   const d = "failed_precondition";
   const x = other();
-}`
+}
+`
     );
   });
 
@@ -113,8 +112,7 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { Severity, other, SpanStatus } from '@sentry/browser';
 
 function doSomething() {
@@ -123,7 +121,8 @@ function doSomething() {
   const c = Severity.ThisDoesNotExist;
   const d = SpanStatus.ThisDoesNotExist;
   const x = other();
-}`
+}
+`
     );
   });
 
@@ -135,9 +134,8 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
-      ` const { Severity, other, SpanStatus } = require('@sentry/browser');
+    expect(actual).toEqual(
+      `const { Severity, other, SpanStatus } = require('@sentry/browser');
 
 function doSomething() {
   const a = "fatal";
@@ -158,11 +156,11 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `function doSomething() {
   const a = "fatal";
-}`
+}
+`
     );
   });
 
@@ -174,11 +172,12 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `function doSomething() {
   const a = "fatal";
-}`
+}
+
+`
     );
   });
 
@@ -190,8 +189,7 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `<script setup>
 import { ref } from 'vue'
 import * as Sentry from '@sentry/vue'
@@ -233,7 +231,8 @@ const count = ref(0)
 .read-the-docs {
   color: #888;
 }
-</style>`
+</style>
+`
     );
   });
 
@@ -245,8 +244,7 @@ const count = ref(0)
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `<script lang="ts">
   import { browser } from '$app/environment';
   import TextLink from '$lib/components/text-link.svelte';
@@ -281,7 +279,8 @@ const count = ref(0)
   {#if location}
     <span class="whitespace-nowrap text-xs">{location}</span>
   {/if}
-</div>`
+</div>
+`
     );
   });
 });

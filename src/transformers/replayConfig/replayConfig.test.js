@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import replayConfigTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | replayConfig', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(replayConfigTransformer.name, 'Replay Config v7>v8');
+    expect(replayConfigTransformer.name).toEqual('Replay Config v7>v8');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | replayConfig', () => {
     await replayConfigTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
@@ -37,8 +36,7 @@ describe('transformers | replayConfig', () => {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -61,7 +59,8 @@ Sentry.init({
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 0.75
-});`
+});
+`
     );
   });
 
@@ -73,8 +72,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 const Replay = Sentry.Replay as any;
@@ -89,7 +87,8 @@ Sentry.init({
   integrations: [replay],
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 0.75
-});`
+});
+`
     );
   });
 
@@ -101,8 +100,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -119,7 +117,8 @@ function myTsx() {
       <div className="my-blocks-selector" />
     </div>
   );
-}`
+}
+`
     );
   });
 
@@ -131,8 +130,7 @@ function myTsx() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -144,7 +142,9 @@ Sentry.init({
       useCompression: true
     }),
   ],
-});`
+});
+
+`
     );
   });
 
@@ -156,8 +156,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -167,7 +166,8 @@ Sentry.init({
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 0.75
-});`
+});
+`
     );
   });
 
@@ -179,15 +179,15 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 const replay = new Sentry.Replay({
   sessionSampleRate: 0.1,
   errorSampleRate: 0.75,
   block: [".my-block-class"]
-});`
+});
+`
     );
   });
 
@@ -199,8 +199,7 @@ const replay = new Sentry.Replay({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const Sentry = require('@sentry/react');
 
 Sentry.init({
@@ -223,7 +222,8 @@ Sentry.init({
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 0.75
-});`
+});
+`
     );
   });
 
@@ -235,8 +235,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import {init, Replay} from '@sentry/react';
 
 init({
@@ -259,7 +258,8 @@ init({
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 0.75
-});`
+});
+`
     );
   });
 
@@ -271,8 +271,7 @@ init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `declare const __LOADER__PUBLIC_KEY__: any;
 declare const __LOADER_SDK_URL__: any;
 declare const __LOADER__CONFIG__: any;
@@ -589,7 +588,8 @@ declare const __LOADER__IS_LAZY__: any;
   __LOADER_SDK_URL__,
   __LOADER__CONFIG__,
   __LOADER__IS_LAZY__
-);`
+);
+`
     );
   });
 });

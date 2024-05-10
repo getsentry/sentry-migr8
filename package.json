@@ -30,7 +30,7 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "fix:prettier": "prettier --write \"{src,test-helpers,test-fixtures}/**/*.js\"",
     "dev": "node ./src/index.js",
-    "test": "node --test src"
+    "test": "vitest run"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
@@ -51,7 +51,9 @@
     "clet": "^1.0.1",
     "eslint": "^8.47.0",
     "prettier": "^3.0.2",
-    "typescript": "^4.9.5"
+    "typescript": "^4.9.5",
+    "vite": "^5.2.11",
+    "vitest": "^1.6.0"
   },
   "volta": {
     "node": "18.17.1",

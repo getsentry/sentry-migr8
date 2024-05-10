@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import tracingConfigTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | tracingConfig', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(tracingConfigTransformer.name, 'Tracing Config v7>v8');
+    expect(tracingConfigTransformer.name).toEqual('Tracing Config v7>v8');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | tracingConfig', () => {
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
@@ -37,8 +36,7 @@ describe('transformers | tracingConfig', () => {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -48,7 +46,8 @@ Sentry.init({
   ],
 
   tracePropagationTargets: ['asdas', /regex/gmi]
-});`
+});
+`
     );
   });
 
@@ -60,8 +59,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -71,7 +69,8 @@ Sentry.init({
   ],
 
   tracePropagationTargets: ['asdas', /regex/gmi]
-});`
+});
+`
     );
   });
 
@@ -83,8 +82,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const Sentry = require('@sentry/react');
 
 Sentry.init({
@@ -94,7 +92,8 @@ Sentry.init({
   ],
 
   tracePropagationTargets: ['asdas', /regex/gmi]
-});`
+});
+`
     );
   });
 
@@ -106,8 +105,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const Sentry = require('@sentry/react');
 
 Sentry.init({
@@ -117,7 +115,8 @@ Sentry.init({
   ],
 
   tracePropagationTargets: ['asdas', /regex/gmi]
-});`
+});
+`
     );
   });
 
@@ -129,8 +128,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const Sentry = require('@sentry/react');
 
 Sentry.init({
@@ -140,7 +138,8 @@ Sentry.init({
   ],
 
   tracePropagationTargets: ['asdas', /regex/gmi]
-});`
+});
+`
     );
   });
 
@@ -152,8 +151,7 @@ Sentry.init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import {init, Replay, BrowserTracing} from '@sentry/react';
 
 init({
@@ -163,7 +161,8 @@ init({
   ],
 
   tracePropagationTargets: ['asdas', /regex/gmi]
-});`
+});
+`
     );
   });
 
@@ -175,8 +174,7 @@ init({
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -187,7 +185,8 @@ Sentry.init({
       tracePropagationTargets: ['asdas', /regex/gmi]
     })
   ],
-});`
+});
+`
     );
   });
 });
