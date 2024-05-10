@@ -101,7 +101,6 @@ function doSomething() {
     await utilExportsTransformer.transform(files, { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, file);
-    console.log({ actual });
 
     expect(actual).toEqual(
       `const {

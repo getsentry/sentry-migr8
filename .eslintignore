@@ -1,2 +1,3 @@
 tmp
 test-fixtures
+vitest.config.ts

@@ -1,4 +1,3 @@
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
 import { afterEach, describe, it, expect } from 'vitest';
