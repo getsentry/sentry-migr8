@@ -17,7 +17,7 @@ describe('transformers | utilExports', () => {
   });
 
   it('has correct name', () => {
-    expect(convertEnumsTransformer.name, 'Convert Enums to String Literals');
+    expect(convertEnumsTransformer.name).toEqual('Convert Enums to String Literals');
   });
 
   it('works with app without Sentry', async () => {
@@ -25,7 +25,7 @@ describe('transformers | utilExports', () => {
     await convertEnumsTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    expect(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {

@@ -17,7 +17,7 @@ describe('transformers | integrations', () => {
   });
 
   it('has correct name', () => {
-    expect(integrationsTransformer.name, 'Use functional integrations instead of integration classes');
+    expect(integrationsTransformer.name).toEqual('Use functional integrations instead of integration classes');
   });
 
   it('works with app without Sentry', async () => {
@@ -25,7 +25,7 @@ describe('transformers | integrations', () => {
     await integrationsTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    expect(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with example files', async () => {

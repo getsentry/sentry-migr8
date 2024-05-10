@@ -17,7 +17,7 @@ describe('transformers | configureScope', () => {
   });
 
   it('has correct name', () => {
-    expect(configureScopeTransformer.name, 'Use getCurrentScope() instead of configureScope()');
+    expect(configureScopeTransformer.name).toEqual('Use getCurrentScope() instead of configureScope()');
   });
 
   it('works with app without Sentry', async () => {
@@ -25,7 +25,7 @@ describe('transformers | configureScope', () => {
     await configureScopeTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    expect(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with example files', async () => {

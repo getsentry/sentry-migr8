@@ -17,7 +17,7 @@ describe('transformers | hub', () => {
   });
 
   it('has correct name', () => {
-    expect(transformer.name, 'Migrate Hub usage');
+    expect(transformer.name).toEqual('Migrate Hub usage');
   });
 
   it('works with app without Sentry', async () => {
@@ -25,7 +25,7 @@ describe('transformers | hub', () => {
     await transformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    expect(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
