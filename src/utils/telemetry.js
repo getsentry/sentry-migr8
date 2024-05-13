@@ -2,14 +2,15 @@ import fs from 'fs';
 
 import {
   defaultStackParser,
-  Hub,
-  Integrations,
-  makeMain,
+  httpIntegration,
   makeNodeTransport,
   NodeClient,
   runWithAsyncContext,
+  Scope,
+  setCurrentClient,
   startSpan,
 } from '@sentry/node';
+import * as Sentry from '@sentry/node';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url)).toString());
 
@@ -18,40 +19,41 @@ const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', imp
  * @template F
  * @param {{enabled: boolean}} options
  * @param {() => F | Promise<F>} callback
- * @returns {Promise<F>}
+ * @returns {Promise<void>}
  */
 export async function withTelemetry(options, callback) {
-  const { sentryHub, sentryClient } = createSentryInstance(options.enabled);
+  const { sentryClient } = createSentryInstance(options.enabled);
 
-  makeMain(sentryHub);
+  await Sentry.startSpan(
+    {
+      name: 'sentry-migr8-execution',
+      status: 'ok',
+      op: 'migr8.flow',
+    },
+    async span => {
+      const sentrySession = Sentry.startSession();
+      Sentry.captureSession();
 
-  const transaction = sentryHub.startTransaction({
-    name: 'sentry-migr8-execution',
-    status: 'ok',
-    op: 'migr8.flow',
-  });
-  sentryHub.getScope().setSpan(transaction);
-  const sentrySession = sentryHub.startSession();
-  sentryHub.captureSession();
-
-  try {
-    return await runWithAsyncContext(() => callback());
-  } catch (e) {
-    sentryHub.captureException('Error during migr8 execution.');
-    transaction.setStatus('internal_error');
-    sentrySession.status = 'crashed';
-    throw e;
-  } finally {
-    transaction.finish();
-    sentryHub.endSession();
-    await sentryClient.flush(3000);
-  }
+      try {
+        return await runWithAsyncContext(() => callback());
+      } catch (e) {
+        Sentry.captureException('Error during migr8 execution.');
+        span?.setStatus('internal_error');
+        sentrySession.status = 'crashed';
+        throw e;
+      } finally {
+        span?.end();
+        Sentry.endSession();
+        await sentryClient.flush(3000);
+      }
+    }
+  );
 }
 
 /**
  * Creates a minimal Sentry instance
  * @param {boolean} enabled
- * @returns {{sentryHub: Hub, sentryClient: NodeClient}}
+ * @returns {{sentryScope: Scope, sentryClient: NodeClient}}
  */
 function createSentryInstance(enabled) {
   const client = new NodeClient({
@@ -62,7 +64,7 @@ function createSentryInstance(enabled) {
     sampleRate: 1,
 
     release: packageJson.version,
-    integrations: [new Integrations.Http()],
+    integrations: [httpIntegration()],
     tracePropagationTargets: [/^https:\/\/sentry.io\//],
 
     stackParser: defaultStackParser,
@@ -83,15 +85,17 @@ function createSentryInstance(enabled) {
 
     transport: makeNodeTransport,
 
-    debug: true,
+    debug: false,
   });
 
-  const hub = new Hub(client);
+  const scope = new Scope();
+  scope.setClient(client);
 
-  hub.setTag('node', process.version);
-  hub.setTag('platform', process.platform);
+  client.init();
 
-  return { sentryHub: hub, sentryClient: client };
+  setCurrentClient(client);
+
+  return { sentryScope: scope, sentryClient: client };
 }
 
 /**
