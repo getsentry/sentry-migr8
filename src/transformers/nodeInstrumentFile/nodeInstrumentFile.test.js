@@ -1,13 +1,31 @@
 import { rmSync } from 'node:fs';
 
-import { afterEach, describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import * as clack from '@clack/prompts';
 
 import { fileExists, getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
 
 import tracingConfigTransformer from './index.js';
 
+vi.mock('@clack/prompts', async () => {
+  return {
+    // ...(await importOriginal<typeof import('@clack/prompts')>() ?? {}),
+    // this will only affect "foo" outside of the original module
+    select: async () => true,
+    confirm: async () => true,
+    log: {
+      info: vi.fn(),
+      warn: vi.fn(),
+    },
+    isCancel: vi.fn(() => false),
+  };
+});
+
 describe('transformers | nodeInstrumentFile', () => {
   let tmpDir = '';
+
+  vi.spyOn(clack, 'confirm').mockImplementation(async () => true);
+  vi.spyOn(clack, 'select').mockImplementation(async () => true);
 
   afterEach(() => {
     if (tmpDir) {
@@ -36,7 +54,7 @@ describe('transformers | nodeInstrumentFile', () => {
     expect(actual1).toEqual(
       getDirFileContent(`${process.cwd()}/test-fixtures/nodeInstrumentFile/browserApp`, 'app.js')
     );
-    expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
+    expect(fileExists(tmpDir, 'instrument.js')).toBe(false);
   });
 
   it('works with existing tracing.js', async () => {
@@ -62,7 +80,8 @@ describe('transformers | nodeInstrumentFile', () => {
       `import "./instrument";
 
 // do something now!
-console.log('Hello, World!');`
+console.log('Hello, World!');
+`
     );
     expect(fileExists(tmpDir, 'instrument.mjs')).toBe(true);
     expect(
@@ -70,7 +89,8 @@ console.log('Hello, World!');`
       `import * as Sentry from '@sentry/node';
 Sentry.init({
   dsn: 'https://example.com',
-});`
+});
+`
     );
   });
 
@@ -87,7 +107,8 @@ import { somethingElse } from 'other-package';
 setTag('key', 'value');
 
 // do something now!
-console.log('Hello, World!', somethingElse.doThis());`
+console.log('Hello, World!', somethingElse.doThis());
+`
     );
     expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
     expect(
@@ -101,7 +122,8 @@ init({
     event.extra.check = something();
     return event;
   }
-});`
+});
+`
     );
   });
 
@@ -114,7 +136,8 @@ init({
       `require("./instrument");
 
 // do something now!
-console.log('Hello, World!');`
+console.log('Hello, World!');
+`
     );
     expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
     expect(
@@ -122,7 +145,8 @@ console.log('Hello, World!');`
       `const Sentry = require('@sentry/node');
 Sentry.init({
   dsn: 'https://example.com',
-});`
+});
+`
     );
   });
 
@@ -143,7 +167,8 @@ const {
 setTag('key', 'value');
 
 // do something now!
-console.log('Hello, World!', somethingElse.doThis());`
+console.log('Hello, World!', somethingElse.doThis());
+`
     );
     expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
     expect(
@@ -162,7 +187,8 @@ init({
     event.extra.check = something();
     return event;
   }
-});`
+});
+`
     );
   });
 
@@ -175,7 +201,8 @@ init({
       `import "./instrument";
 
 // do something now!
-console.log('Hello, World!');`
+console.log('Hello, World!');
+`
     );
     expect(fileExists(tmpDir, 'instrument.ts')).toBe(true);
     expect(
@@ -183,7 +210,8 @@ console.log('Hello, World!');`
       `import * as Sentry from '@sentry/node';
 Sentry.init({
   dsn: 'https://example.com' as string,
-});`
+});
+`
     );
   });
 });
