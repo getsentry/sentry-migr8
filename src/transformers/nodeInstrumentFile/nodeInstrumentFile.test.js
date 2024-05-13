@@ -1,18 +1,21 @@
 import { rmSync } from 'node:fs';
+import { beforeEach } from 'node:test';
 
 import { afterEach, describe, it, expect, vi } from 'vitest';
-import * as clack from '@clack/prompts';
 
 import { fileExists, getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
 
 import tracingConfigTransformer from './index.js';
 
+/** @type typeof globalThis & { _clackSelectResponse?: unknown } */
+const globalWithClackMock = global;
+
 vi.mock('@clack/prompts', async () => {
   return {
     // ...(await importOriginal<typeof import('@clack/prompts')>() ?? {}),
     // this will only affect "foo" outside of the original module
-    select: async () => true,
-    confirm: async () => true,
+    select: vi.fn(async () => globalWithClackMock._clackSelectResponse ?? true),
+    confirm: vi.fn(async () => true),
     log: {
       info: vi.fn(),
       warn: vi.fn(),
@@ -24,8 +27,10 @@ vi.mock('@clack/prompts', async () => {
 describe('transformers | nodeInstrumentFile', () => {
   let tmpDir = '';
 
-  vi.spyOn(clack, 'confirm').mockImplementation(async () => true);
-  vi.spyOn(clack, 'select').mockImplementation(async () => true);
+  beforeEach(() => {
+    vi.clearAllMocks();
+    globalWithClackMock._clackSelectResponse = undefined;
+  });
 
   afterEach(() => {
     if (tmpDir) {
@@ -84,13 +89,11 @@ console.log('Hello, World!');
 `
     );
     expect(fileExists(tmpDir, 'instrument.mjs')).toBe(true);
-    expect(
-      getDirFileContent(tmpDir, 'instrument.mjs'),
+    expect(getDirFileContent(tmpDir, 'instrument.mjs')).toEqual(
       `import * as Sentry from '@sentry/node';
 Sentry.init({
   dsn: 'https://example.com',
-});
-`
+});`
     );
   });
 
@@ -111,8 +114,7 @@ console.log('Hello, World!', somethingElse.doThis());
 `
     );
     expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
-    expect(
-      getDirFileContent(tmpDir, 'instrument.js'),
+    expect(getDirFileContent(tmpDir, 'instrument.js')).toEqual(
       `import { init, getActiveSpan } from '@sentry/node';
 import { something } from 'other-package';
 init({
@@ -122,8 +124,7 @@ init({
     event.extra.check = something();
     return event;
   }
-});
-`
+});`
     );
   });
 
@@ -140,13 +141,11 @@ console.log('Hello, World!');
 `
     );
     expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
-    expect(
-      getDirFileContent(tmpDir, 'instrument.js'),
+    expect(getDirFileContent(tmpDir, 'instrument.js')).toEqual(
       `const Sentry = require('@sentry/node');
 Sentry.init({
   dsn: 'https://example.com',
-});
-`
+});`
     );
   });
 
@@ -171,8 +170,7 @@ console.log('Hello, World!', somethingElse.doThis());
 `
     );
     expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
-    expect(
-      getDirFileContent(tmpDir, 'instrument.js'),
+    expect(getDirFileContent(tmpDir, 'instrument.js')).toEqual(
       `const {
   init,
   getActiveSpan
@@ -187,8 +185,7 @@ init({
     event.extra.check = something();
     return event;
   }
-});
-`
+});`
     );
   });
 
@@ -205,13 +202,25 @@ console.log('Hello, World!');
 `
     );
     expect(fileExists(tmpDir, 'instrument.ts')).toBe(true);
-    expect(
-      getDirFileContent(tmpDir, 'instrument.ts'),
+    expect(getDirFileContent(tmpDir, 'instrument.ts')).toEqual(
       `import * as Sentry from '@sentry/node';
 Sentry.init({
   dsn: 'https://example.com' as string,
-});
-`
+});`
     );
+  });
+
+  it("Doesn't add an import/require statement if user selects to run with CLI argument", async () => {
+    globalWithClackMock._clackSelectResponse = false;
+
+    tmpDir = makeTmpDir(getFixturePath('nodeInstrumentFile/nodeAppRequire'));
+    await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
+
+    const actual = getDirFileContent(tmpDir, 'app.js');
+    expect(actual).toMatchInlineSnapshot(`
+      "// do something now!
+      console.log('Hello, World!');
+      "
+    `);
   });
 });

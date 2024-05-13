@@ -15,7 +15,7 @@ export default {
   requiresUserInput: true,
   transform: async (files, options) => {
     if (options.sdk !== '@sentry/node') {
-      // this transform only applies to server SDKs
+      // this transform only applies to the Node SDK
       return;
     }
 
