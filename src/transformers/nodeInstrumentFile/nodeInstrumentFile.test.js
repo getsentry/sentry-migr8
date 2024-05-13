@@ -209,18 +209,4 @@ Sentry.init({
 });`
     );
   });
-
-  it("Doesn't add an import/require statement if user selects to run with CLI argument", async () => {
-    globalWithClackMock._clackSelectResponse = false;
-
-    tmpDir = makeTmpDir(getFixturePath('nodeInstrumentFile/nodeAppRequire'));
-    await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
-
-    const actual = getDirFileContent(tmpDir, 'app.js');
-    expect(actual).toMatchInlineSnapshot(`
-      "// do something now!
-      console.log('Hello, World!');
-      "
-    `);
-  });
 });

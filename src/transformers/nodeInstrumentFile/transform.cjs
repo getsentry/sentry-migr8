@@ -98,14 +98,12 @@ module.exports = function (fileInfo, api, options) {
     // Note: We import/require without file extension, this is the most common way
     // Potential improvement:
     // We could check if the file has any relative imports / require and see if that uses file extension
-    if (options.sentry.transformOptions?.['nodeInstrumentFile:add-import']) {
-      if (sentryImport.length > 0) {
-        tree.get().node.program.body.unshift(j.importDeclaration([], j.literal('./instrument')));
-      } else {
-        // Else we add a require
-        const requireStatement = j.callExpression(j.identifier('require'), [j.literal('./instrument')]);
-        tree.get().node.program.body.unshift(j.expressionStatement(requireStatement));
-      }
+    if (sentryImport.length > 0) {
+      tree.get().node.program.body.unshift(j.importDeclaration([], j.literal('./instrument')));
+    } else {
+      // Else we add a require
+      const requireStatement = j.callExpression(j.identifier('require'), [j.literal('./instrument')]);
+      tree.get().node.program.body.unshift(j.expressionStatement(requireStatement));
     }
 
     // Remove from original file

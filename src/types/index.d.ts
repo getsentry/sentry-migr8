@@ -7,12 +7,6 @@ export interface RunOptions {
   sdk?: string;
   cwd?: string;
   disableTelemetry?: boolean;
-  transformOptions?: {
-    /**
-     * Whether to add a top level `import "instrumentation.js"` statement to the file
-     */
-    'nodeInstrumentFile:add-import'?: boolean;
-  };
 }
 
 export interface Transformer {
