@@ -8,7 +8,7 @@ import {
   makeNodeTransport,
   NodeClient,
   runWithAsyncContext,
-  trace,
+  startSpan,
 } from '@sentry/node';
 
 const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url)).toString());
@@ -102,5 +102,5 @@ function createSentryInstance(enabled) {
  * @returns {Promise<F>}
  */
 export async function traceStep(step, callback) {
-  return trace({ name: step, op: 'mgir8.step' }, () => callback());
+  return startSpan({ name: step, op: 'mgir8.step' }, () => callback());
 }

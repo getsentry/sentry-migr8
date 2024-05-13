@@ -23,13 +23,13 @@ process.setMaxListeners(0);
  * @param {import("types").RunOptions} options
  */
 export async function run(options) {
-  withTelemetry({ enabled: !options.disableTelemetry }, () => runWithTelementry(options));
+  withTelemetry({ enabled: !options.disableTelemetry }, () => runWithTelemetry(options));
 }
 
 /**
  * @param {import("types").RunOptions} options
  */
-export async function runWithTelementry(options) {
+export async function runWithTelemetry(options) {
   traceStep('intro', () => {
     intro(chalk.inverse('Welcome to sentry-migr8!'));
     note(
@@ -38,16 +38,18 @@ export async function runWithTelementry(options) {
   We will guide you through the process step by step.${
     !options.disableTelemetry
       ? `
-  This tool collectes anonymous telemetry data and sends it to Sentry.
+  This tool collects anonymous telemetry data and sends it to Sentry.
   You can disable this by passing the --disableTelemetry option.`
       : ''
   }`
     );
 
-    note(`We will run transforms on files matching the following ${
+    note(`We will run code transforms on files matching the following ${
       options.filePatterns.length > 1 ? 'patterns' : 'pattern'
-    }, ignoring any gitignored files:
+    }, ignoring any .gitignored files:
+
   ${options.filePatterns.join('\n')}
+
   (You can change this by specifying the --filePatterns option)`);
   });
 
@@ -74,7 +76,7 @@ export async function runWithTelementry(options) {
   const applyAllTransformers = await traceStep('ask-apply-all-transformers', async () =>
     abortIfCancelled(
       select({
-        message: 'Do you want to apply all transformers, or only selected ones?',
+        message: 'Do you want to apply all code transforms, or only selected ones?',
         options: [
           { value: true, label: 'Apply all transformations.', hint: 'Recommended' },
           { value: false, label: 'I want to select myself.' },
@@ -145,7 +147,7 @@ function detectSdk(packageJSON) {
   const sdkName = sdkPackage ? sdkPackage.name : undefined;
 
   if (sdkName) {
-    log.info(`Detected SDK: ${sdkName}`);
+    log.info(`Detected SDK: ${chalk.cyan(sdkName)}`);
   } else {
     log.info(
       `No Sentry SDK detected. Skipping all import-rewriting transformations.
