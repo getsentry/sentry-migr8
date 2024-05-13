@@ -7,29 +7,11 @@ import { fileExists, getDirFileContent, getFixturePath, makeTmpDir } from '../..
 
 import tracingConfigTransformer from './index.js';
 
-/** @type typeof globalThis & { _clackSelectResponse?: unknown } */
-const globalWithClackMock = global;
-
-vi.mock('@clack/prompts', async () => {
-  return {
-    // ...(await importOriginal<typeof import('@clack/prompts')>() ?? {}),
-    // this will only affect "foo" outside of the original module
-    select: vi.fn(async () => globalWithClackMock._clackSelectResponse ?? true),
-    confirm: vi.fn(async () => true),
-    log: {
-      info: vi.fn(),
-      warn: vi.fn(),
-    },
-    isCancel: vi.fn(() => false),
-  };
-});
-
 describe('transformers | nodeInstrumentFile', () => {
   let tmpDir = '';
 
   beforeEach(() => {
     vi.clearAllMocks();
-    globalWithClackMock._clackSelectResponse = undefined;
   });
 
   afterEach(() => {
