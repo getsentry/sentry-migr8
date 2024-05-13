@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { fileExists, getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import tracingConfigTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | nodeInstrumentFile', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(tracingConfigTransformer.name, 'Move @sentry/node config into instrument.js file');
+    expect(tracingConfigTransformer.name).toEqual('Move @sentry/node config into instrument.js file');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | nodeInstrumentFile', () => {
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assertStringEquals(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with browser SDK', async () => {
@@ -34,11 +33,10 @@ describe('transformers | nodeInstrumentFile', () => {
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       getDirFileContent(`${process.cwd()}/test-fixtures/nodeInstrumentFile/browserApp`, 'app.js')
     );
-    assert.equal(fileExists(tmpDir, 'instrument.js'), false);
+    expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
   });
 
   it('works with existing tracing.js', async () => {
@@ -47,12 +45,10 @@ describe('transformers | nodeInstrumentFile', () => {
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
     const actual2 = getDirFileContent(tmpDir, 'tracing.js');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       getDirFileContent(`${process.cwd()}/test-fixtures/nodeInstrumentFile/nodeAppTracingFile`, 'app.js')
     );
-    assertStringEquals(
-      actual2,
+    expect(actual2).toEqual(
       getDirFileContent(`${process.cwd()}/test-fixtures/nodeInstrumentFile/nodeAppTracingFile`, 'tracing.js')
     );
   });
@@ -62,15 +58,14 @@ describe('transformers | nodeInstrumentFile', () => {
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.mjs');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `import "./instrument";
 
 // do something now!
 console.log('Hello, World!');`
     );
-    assert.equal(fileExists(tmpDir, 'instrument.mjs'), true);
-    assertStringEquals(
+    expect(fileExists(tmpDir, 'instrument.mjs')).toBe(true);
+    expect(
       getDirFileContent(tmpDir, 'instrument.mjs'),
       `import * as Sentry from '@sentry/node';
 Sentry.init({
@@ -84,8 +79,7 @@ Sentry.init({
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `import "./instrument";
 import { setTag } from '@sentry/node';
 import { somethingElse } from 'other-package';
@@ -95,8 +89,8 @@ setTag('key', 'value');
 // do something now!
 console.log('Hello, World!', somethingElse.doThis());`
     );
-    assert.equal(fileExists(tmpDir, 'instrument.js'), true);
-    assertStringEquals(
+    expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
+    expect(
       getDirFileContent(tmpDir, 'instrument.js'),
       `import { init, getActiveSpan } from '@sentry/node';
 import { something } from 'other-package';
@@ -116,15 +110,14 @@ init({
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `require("./instrument");
 
 // do something now!
 console.log('Hello, World!');`
     );
-    assert.equal(fileExists(tmpDir, 'instrument.js'), true);
-    assertStringEquals(
+    expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
+    expect(
       getDirFileContent(tmpDir, 'instrument.js'),
       `const Sentry = require('@sentry/node');
 Sentry.init({
@@ -138,8 +131,7 @@ Sentry.init({
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `require("./instrument");
 const {
   setTag
@@ -153,8 +145,8 @@ setTag('key', 'value');
 // do something now!
 console.log('Hello, World!', somethingElse.doThis());`
     );
-    assert.equal(fileExists(tmpDir, 'instrument.js'), true);
-    assertStringEquals(
+    expect(fileExists(tmpDir, 'instrument.js')).toBe(true);
+    expect(
       getDirFileContent(tmpDir, 'instrument.js'),
       `const {
   init,
@@ -179,15 +171,14 @@ init({
     await tracingConfigTransformer.transform([tmpDir], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual1 = getDirFileContent(tmpDir, 'app.ts');
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `import "./instrument";
 
 // do something now!
 console.log('Hello, World!');`
     );
-    assert.equal(fileExists(tmpDir, 'instrument.ts'), true);
-    assertStringEquals(
+    expect(fileExists(tmpDir, 'instrument.ts')).toBe(true);
+    expect(
       getDirFileContent(tmpDir, 'instrument.ts'),
       `import * as Sentry from '@sentry/node';
 Sentry.init({
