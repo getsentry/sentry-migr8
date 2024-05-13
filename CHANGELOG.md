@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.0
+
+- feat: Add transform to extract node config into separate file (#41)
+
 ## 0.1.0
 
 - feat: Add transform for hub methods (#35)
