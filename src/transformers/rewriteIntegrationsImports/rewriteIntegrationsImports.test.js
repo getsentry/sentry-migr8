@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
 import { rmSync } from 'node:fs';
-import assert from 'node:assert';
+
+import { afterEach, describe, it, expect } from 'vitest';
 
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import transformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | rewriteIntegrationsImports', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(transformer.name, 'Remove `@sentry/integrations` imports');
+    expect(transformer.name).toBe('Remove `@sentry/integrations` imports');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | rewriteIntegrationsImports', () => {
     await transformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with example files', async () => {
@@ -41,8 +40,7 @@ describe('transformers | rewriteIntegrationsImports', () => {
     const simpleRequireIntegrations = getDirFileContent(tmpDir, 'simpleRequireIntegrations.js');
     const integrationsFunctionalImport = getDirFileContent(tmpDir, 'integrationsFunctionalImport.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 function orig() {
@@ -109,8 +107,7 @@ function doSomething() {
 `
     );
 
-    assertStringEquals(
-      withImportsTs,
+    expect(withImportsTs).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 function orig(): void {
@@ -177,8 +174,7 @@ function doSomething(): void {
 `
     );
 
-    assertStringEquals(
-      withRequire,
+    expect(withRequire).toEqual(
       `const { BrowserTracing, Integrations } = require('@sentry/browser');
 const Sentry = require('@sentry/browser');
 const SentryIntegrations =  require("@sentry/browser");
@@ -248,8 +244,7 @@ function doSomething() {
 `
     );
 
-    assertStringEquals(
-      dedupeImports,
+    expect(dedupeImports).toEqual(
       `import { BrowserTracing, Integrations, breadcrumbsIntegration } from '@sentry/browser';
 
 function doSomething() {
@@ -257,22 +252,22 @@ function doSomething() {
   const b = new Integrations.BrowserTracing();
   const c = breadcrumbsIntegration();
   const d = new Integrations.Breadcrumbs();
-}`
+}
+`
     );
 
-    assertStringEquals(
-      simpleImportIntegrations,
+    expect(simpleImportIntegrations).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 function doSomething() {
   Sentry.init({
     integrations: [new Sentry.HttpClient()]
   });
-}`
+}
+`
     );
 
-    assertStringEquals(
-      simpleRequireIntegrations,
+    expect(simpleRequireIntegrations).toEqual(
       `const Sentry = require('@sentry/browser');
 const { HttpClient } = require("@sentry/browser");
 
@@ -280,18 +275,19 @@ function doSomething() {
   Sentry.init({
     integrations: [new HttpClient()]
   });
-}`
+}
+`
     );
 
-    assertStringEquals(
-      integrationsFunctionalImport,
+    expect(integrationsFunctionalImport).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 function doSomething() {
   Sentry.init({
     integrations: [Sentry.httpClientIntegration()]
   });
-}`
+}
+`
     );
   });
 });

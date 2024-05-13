@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import nodeExportsTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | nodeExports', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(nodeExportsTransformer.name, 'Node Handler Utils v7>v8');
+    expect(nodeExportsTransformer.name).toEqual('Node Handler Utils v7>v8');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | nodeExports', () => {
     await nodeExportsTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
@@ -37,15 +36,15 @@ describe('transformers | nodeExports', () => {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import {other, myOtherImport, extractRequestData} from '@sentry/node';
 import * as Sentry from '@sentry/node';
 
 extractRequestData();
 Sentry.extractRequestData();
 other.extractRequestData();
-myOtherImport();`
+myOtherImport();
+`
     );
   });
 
@@ -57,15 +56,16 @@ myOtherImport();`
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const { other, myOtherImport, extractRequestData } = require('@sentry/node');
 const Sentry = require('@sentry/node');
 
 extractRequestData();
 Sentry.extractRequestData();
 other.extractRequestData();
-myOtherImport();`
+myOtherImport();
+
+`
     );
   });
 
@@ -77,13 +77,14 @@ myOtherImport();`
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { Handlers, other, extractRequestData } from '@sentry/node';
 
 extractRequestData();
 Handlers.tracingHandler();
-other.extractRequestData();`
+other.extractRequestData();
+
+`
     );
   });
 
@@ -95,8 +96,7 @@ other.extractRequestData();`
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const {
   Handlers,
   other,
@@ -105,7 +105,8 @@ other.extractRequestData();`
 
 extractRequestData();
 Handlers.tracingHandler();
-other.extractRequestData();`
+other.extractRequestData();
+`
     );
   });
 
@@ -117,15 +118,15 @@ other.extractRequestData();`
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { Handlers, PolymorphicRequest } from '@sentry/node';
 import * as Sentry from '@sentry/node';
 
 export function doSomething(input: PolymorphicRequest): Sentry.PolymorphicRequest {
   Handlers.doSomethingElse();
   return {} as PolymorphicRequest;
-}`
+}
+`
     );
   });
 });

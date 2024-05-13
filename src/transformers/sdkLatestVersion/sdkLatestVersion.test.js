@@ -1,10 +1,9 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import sdkLatestVersionTransformer from './index.js';
 
@@ -20,7 +19,7 @@ describe('transformers | sdkLatestVersion', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(sdkLatestVersionTransformer.name, 'Update SDK to latest version');
+    expect(sdkLatestVersionTransformer.name).toEqual('Update SDK to latest version');
   });
 
   it('works with app without Sentry', async () => {
@@ -28,7 +27,7 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([tmpDir], { filePatterns: [], cwd: tmpDir });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with no sentry deps files', async () => {
@@ -36,8 +35,7 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([tmpDir], { filePatterns: [], cwd: tmpDir });
 
     const actual = getDirFileContent(tmpDir, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "is-even": "1.0.0"
@@ -45,7 +43,8 @@ describe('transformers | sdkLatestVersion', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -55,11 +54,11 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
  "name": "no deps"
-}`
+}
+`
     );
   });
 
@@ -69,8 +68,7 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd, sdk: '@sentry/react' });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/hub": "^${latestVersion}",
@@ -83,7 +81,8 @@ describe('transformers | sdkLatestVersion', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -93,8 +92,7 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/integrations": "^${latestVersion}",
@@ -106,7 +104,8 @@ describe('transformers | sdkLatestVersion', () => {
     "@sentry/tracing": "^${latestVersion}",
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -116,8 +115,7 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/hub": "^${latestVersion}",
@@ -129,7 +127,8 @@ describe('transformers | sdkLatestVersion', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 
@@ -139,8 +138,7 @@ describe('transformers | sdkLatestVersion', () => {
     await sdkLatestVersionTransformer.transform([cwd], { filePatterns: [], cwd });
 
     const actual = getDirFileContent(cwd, 'package.json');
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `{
   "dependencies": {
     "@sentry/hub": "~${latestVersion}",
@@ -152,7 +150,8 @@ describe('transformers | sdkLatestVersion', () => {
   "devDependencies": {
     "is-odd": "3.0.1"
   }
-}`
+}
+`
     );
   });
 });

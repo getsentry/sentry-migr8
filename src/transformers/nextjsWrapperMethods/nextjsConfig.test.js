@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import nextjsWrapperMethodsTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | nextjsWrapperMethods', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(nextjsWrapperMethodsTransformer.name, 'Next.js Wrapper Methods v7>v8');
+    expect(nextjsWrapperMethodsTransformer.name).toEqual('Next.js Wrapper Methods v7>v8');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | nextjsWrapperMethods', () => {
     await nextjsWrapperMethodsTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with example files', async () => {
@@ -38,8 +37,7 @@ describe('transformers | nextjsWrapperMethods', () => {
     const withRequire = getDirFileContent(tmpDir, 'withRequire.js');
     const withoutNextImport = getDirFileContent(tmpDir, 'withoutNextImport.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `import { wrapApiHandlerWithSentry, wrapGetInitialPropsWithSentry as myRewrite, otherImport } from '@sentry/nextjs';
 import * as Sentry from '@sentry/nextjs';
 
@@ -64,10 +62,10 @@ function doSomething() {
 
   Sentry.someOtherMethod(orig, 'arg2');
   otherImport(orig, 'arg2');
-}`
+}
+`
     );
-    assertStringEquals(
-      withImportsTs,
+    expect(withImportsTs).toEqual(
       `import { wrapApiHandlerWithSentry, wrapGetInitialPropsWithSentry as myRewrite, otherImport } from '@sentry/nextjs';
 import * as Sentry from '@sentry/nextjs';
 
@@ -92,11 +90,11 @@ function doSomething(): void {
 
   Sentry.someOtherMethod(orig, 'arg2');
   otherImport(orig, 'arg2');
-}`
+}
+`
     );
 
-    assertStringEquals(
-      withRequire,
+    expect(withRequire).toEqual(
       `const { wrapApiHandlerWithSentry, wrapGetInitialPropsWithSentry: myRewrite, otherImport } = require('@sentry/nextjs');
 const Sentry = require('@sentry/nextjs');
 
@@ -121,11 +119,11 @@ function doSomething() {
 
   Sentry.someOtherMethod(orig, 'arg2');
   otherImport(orig, 'arg2');
-}`
+}
+`
     );
 
-    assertStringEquals(
-      withoutNextImport,
+    expect(withoutNextImport).toEqual(
       `import { withSentryAPI, withSentryServerSideGetInitialProps as myRewrite, otherImport } from '@sentry/OTHER';
 import * as Sentry from '@sentry/OTHER';
 
@@ -150,7 +148,8 @@ function doSomething() {
 
   Sentry.someOtherMethod(orig, 'arg2');
   otherImport(orig, 'arg2');
-}`
+}
+`
     );
   });
 });

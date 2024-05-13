@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import transformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | hub', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(transformer.name, 'Migrate Hub usage');
+    expect(transformer.name).toEqual('Migrate Hub usage');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | hub', () => {
     await transformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
@@ -35,8 +34,7 @@ describe('transformers | hub', () => {
 
     const withImports = getDirFileContent(tmpDir, 'withImports.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `import {
   captureException,
   setUser,
@@ -87,7 +85,8 @@ function doSomethingElse() {
 
   setExtra({});
   captureEvent({});
-}`
+}
+`
     );
   });
 
@@ -97,8 +96,7 @@ function doSomethingElse() {
 
     const actual = getDirFileContent(tmpDir, 'withRequire.js');
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const {
   captureException,
   setUser,
@@ -149,7 +147,8 @@ function doSomethingElse() {
 
   setExtra({});
   captureEvent({});
-}`
+}
+`
     );
   });
 
@@ -159,14 +158,14 @@ function doSomethingElse() {
 
     const withImports = getDirFileContent(tmpDir, 'mergeImports.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 function doSomething() {
   Sentry.captureException(error);
   Sentry.setUser({ name: 'Anne' });
-}`
+}
+`
     );
   });
 
@@ -176,8 +175,7 @@ function doSomething() {
 
     const withImports = getDirFileContent(tmpDir, 'mergeRequire.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `const { captureException } = require('@sentry/browser');
 const Sentry = require('@sentry/browser');
 
@@ -195,14 +193,14 @@ function doSomething() {
 
     const withImports = getDirFileContent(tmpDir, 'namespaceImport.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 function doSomething() {
   Sentry.captureException(error);
   Sentry.setUser({ name: 'Anne' });
-}`
+}
+`
     );
   });
 
@@ -212,14 +210,14 @@ function doSomething() {
 
     const withImports = getDirFileContent(tmpDir, 'namespaceRequire.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `const Sentry = require('@sentry/browser');
 
 function doSomething() {
   Sentry.captureException(error);
   Sentry.setUser({ name: 'Anne' });
-}`
+}
+`
     );
   });
 });

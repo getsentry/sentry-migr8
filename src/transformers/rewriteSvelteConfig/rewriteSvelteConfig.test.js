@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import rewriteSvelteConfig from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | rewriteSvelteConfig', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(rewriteSvelteConfig.name, 'Rewrite Svelte Config');
+    expect(rewriteSvelteConfig.name, 'Rewrite Svelte Config');
   });
 
   it('no-ops with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | rewriteSvelteConfig', () => {
     await rewriteSvelteConfig.transform([tmpDir], { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('no-ops if no SDK is specified', async () => {
@@ -34,7 +33,7 @@ describe('transformers | rewriteSvelteConfig', () => {
     await rewriteSvelteConfig.transform([tmpDir], { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, 'svelte.config.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/svelteAppNamed`, 'svelte.config.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/svelteAppNamed`, 'svelte.config.js'));
   });
 
   it('no-ops if a non-Svelte SDK is specified', async () => {
@@ -42,7 +41,7 @@ describe('transformers | rewriteSvelteConfig', () => {
     await rewriteSvelteConfig.transform([tmpDir], { filePatterns: [], sdk: '@sentry/react' });
 
     const actual = getDirFileContent(tmpDir, 'svelte.config.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/svelteAppNamed`, 'svelte.config.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/svelteAppNamed`, 'svelte.config.js'));
   });
 
   it('no-ops if `componentTrackingPreprocessor` is not used in the file', async () => {
@@ -50,7 +49,7 @@ describe('transformers | rewriteSvelteConfig', () => {
     await rewriteSvelteConfig.transform([tmpDir], { filePatterns: [], sdk: '@sentry/svelte' });
 
     const actual = getDirFileContent(tmpDir, 'svelte.config.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/svelteAppUnchanged`, 'svelte.config.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/svelteAppUnchanged`, 'svelte.config.js'));
   });
 
   it('works with a svelte config with named imports', async () => {
@@ -59,8 +58,7 @@ describe('transformers | rewriteSvelteConfig', () => {
 
     const actual = getDirFileContent(tmpDir, 'svelte.config.js');
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import adapter from '@sveltejs/adapter-vercel';
 import preprocess from 'svelte-preprocess';
 import { mdsvex } from 'mdsvex';
@@ -88,7 +86,8 @@ const config = {
   }
 };
 
-export default withSentryConfig(config);`
+export default withSentryConfig(config);
+`
     );
   });
 
@@ -98,8 +97,7 @@ export default withSentryConfig(config);`
 
     const actual = getDirFileContent(tmpDir, 'svelte.config.js');
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import adapter from '@sveltejs/adapter-vercel';
 import preprocess from 'svelte-preprocess';
 import { mdsvex } from 'mdsvex';
@@ -127,7 +125,8 @@ const config = {
   }
 };
 
-export default Sentry.withSentryConfig(config);`
+export default Sentry.withSentryConfig(config);
+`
     );
   });
 
@@ -137,8 +136,7 @@ export default Sentry.withSentryConfig(config);`
 
     const actual = getDirFileContent(tmpDir, 'svelte.config.js');
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import adapter from '@sveltejs/adapter-vercel';
 import preprocess from 'svelte-preprocess';
 import { mdsvex } from 'mdsvex';
@@ -166,7 +164,8 @@ const config = {
   }
 };
 
-export default Sentry.withSentryConfig(config);`
+export default Sentry.withSentryConfig(config);
+`
     );
   });
 });

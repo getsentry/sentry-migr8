@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import rewriteTracingImports from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | rewriteTracingImports', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(rewriteTracingImports.name, 'Remove `@sentry/tracing` imports');
+    expect(rewriteTracingImports.name).toEqual('Remove `@sentry/tracing` imports');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | rewriteTracingImports', () => {
     await rewriteTracingImports.transform([tmpDir], { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('no-ops if no SDK is specified', async () => {
@@ -34,7 +33,7 @@ describe('transformers | rewriteTracingImports', () => {
     await rewriteTracingImports.transform([`${tmpDir}/named-named.mjs`], { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, 'named-named.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/tracingAppNodeEsm`, 'named-named.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/tracingAppNodeEsm`, 'named-named.js'));
   });
 
   it('works with Node ESM example files', async () => {
@@ -47,8 +46,7 @@ describe('transformers | rewriteTracingImports', () => {
     const actual4 = getDirFileContent(tmpDir, 'namespace-named-2.mjs');
     const actual5 = getDirFileContent(tmpDir, 'namespace-namespace.ts');
 
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `import { init, addExtensionMethods } from '@sentry/node';
 
 init({
@@ -56,11 +54,11 @@ init({
   tracesSampleRate: 1.0,
 });
 
-addExtensionMethods();`
+addExtensionMethods();
+`
     );
 
-    assertStringEquals(
-      actual2,
+    expect(actual2).toEqual(
       `import { init as SentryInit, addExtensionMethods } from '@sentry/node';
 
 SentryInit({
@@ -68,11 +66,11 @@ SentryInit({
   tracesSampleRate: 1.0,
 });
 
-addExtensionMethods();`
+addExtensionMethods();
+`
     );
 
-    assertStringEquals(
-      actual3,
+    expect(actual3).toEqual(
       `import * as Sentry from '@sentry/node';
 
 Sentry.init({
@@ -94,11 +92,11 @@ transaction.setTag('shouldBePrefixed', false)
 
 doLongRunningThing();
 
-transaction.finish();`
+transaction.finish();
+`
     );
 
-    assertStringEquals(
-      actual4,
+    expect(actual4).toEqual(
       `import * as Sentry from '@sentry/node';
 import { addExtensionMethods as xyz } from "@sentry/node";
 
@@ -107,11 +105,11 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-xyz();`
+xyz();
+`
     );
 
-    assertStringEquals(
-      actual5,
+    expect(actual5).toEqual(
       `import * as Sentry from '@sentry/node';
 
 Sentry.init({
@@ -131,7 +129,8 @@ txn.finish();
 function dontTouchThis() {
   const Tracing = 'foo';
   console.log(Tracing);
-}`
+}
+`
     );
   });
 
@@ -145,8 +144,7 @@ function dontTouchThis() {
     const actual4 = getDirFileContent(tmpDir, 'namespace-named-2.js');
     const actual5 = getDirFileContent(tmpDir, 'namespace-namespace.js');
 
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `const { init } = require('@sentry/node');
 const { addExtensionMethods } = require("@sentry/node");
 
@@ -155,11 +153,11 @@ init({
   tracesSampleRate: 1.0,
 });
 
-addExtensionMethods();`
+addExtensionMethods();
+`
     );
 
-    assertStringEquals(
-      actual2,
+    expect(actual2).toEqual(
       `const { init: SentryInit } = require('@sentry/node');
 const { addExtensionMethods } = require("@sentry/node");
 
@@ -168,11 +166,11 @@ SentryInit({
   tracesSampleRate: 1.0,
 });
 
-addExtensionMethods();`
+addExtensionMethods();
+`
     );
 
-    assertStringEquals(
-      actual3,
+    expect(actual3).toEqual(
       `const Sentry = require('@sentry/node');
 const { addExtensionMethods } = require("@sentry/node");
 
@@ -181,11 +179,11 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-addExtensionMethods();`
+addExtensionMethods();
+`
     );
 
-    assertStringEquals(
-      actual4,
+    expect(actual4).toEqual(
       `const Sentry = require('@sentry/node');
 const { addExtensionMethods: xyz } = require("@sentry/node");
 
@@ -194,11 +192,11 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-xyz();`
+xyz();
+`
     );
 
-    assertStringEquals(
-      actual5,
+    expect(actual5).toEqual(
       `const Sentry = require('@sentry/node');
 const Tracing = require("@sentry/node");
 
@@ -219,7 +217,8 @@ txn.finish();
 function dontTouchThis() {
   const Tracing = 'foo';
   console.log(Tracing);
-}`
+}
+`
     );
   });
 
@@ -229,8 +228,7 @@ function dontTouchThis() {
 
     const actual1 = getDirFileContent(tmpDir, 'esm-namespace-named.js');
 
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `import * as Sentry from '@sentry/browser';
 
 Sentry.init({
@@ -241,7 +239,8 @@ Sentry.init({
 
 Sentry.addExtensionMethods();
 
-console.log(Sentry.TRACEPARENT_REGEXP)`
+console.log(Sentry.TRACEPARENT_REGEXP)
+`
     );
   });
 });

@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import rewriteReplayImports from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | rewriteReplayImports', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(rewriteReplayImports.name, 'Remove `@sentry/replay` imports');
+    expect(rewriteReplayImports.name, 'Remove `@sentry/replay` imports');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | rewriteReplayImports', () => {
     await rewriteReplayImports.transform([tmpDir], { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('no-ops if no SDK is specified', async () => {
@@ -34,7 +33,7 @@ describe('transformers | rewriteReplayImports', () => {
     await rewriteReplayImports.transform([`${tmpDir}/oldReplayImport.js`], { filePatterns: [] });
 
     const actual = getDirFileContent(tmpDir, 'oldReplayImport.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/replayApp`, 'oldReplayImport.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/replayApp`, 'oldReplayImport.js'));
   });
 
   it('no-ops if server SDKs are specified', async () => {
@@ -42,7 +41,7 @@ describe('transformers | rewriteReplayImports', () => {
     await rewriteReplayImports.transform([`${tmpDir}/oldReplayImport.js`], { filePatterns: [], sdk: '@sentry/node' });
 
     const actual = getDirFileContent(tmpDir, 'oldReplayImport.js');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/replayApp`, 'oldReplayImport.js'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/replayApp`, 'oldReplayImport.js'));
   });
 
   it('no-ops if Replay is already imported from the SDK package', async () => {
@@ -50,7 +49,7 @@ describe('transformers | rewriteReplayImports', () => {
     await rewriteReplayImports.transform([`${tmpDir}/myReactApp.tsx`], { filePatterns: [], sdk: '@sentry/react' });
 
     const actual = getDirFileContent(tmpDir, 'myReactApp.tsx');
-    assert.equal(actual, getDirFileContent(`${process.cwd()}/test-fixtures/replayApp`, 'myReactApp.tsx'));
+    expect(actual).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/replayApp`, 'myReactApp.tsx'));
   });
 
   it('works with Replay example files', async () => {
@@ -60,8 +59,7 @@ describe('transformers | rewriteReplayImports', () => {
     const actual1 = getDirFileContent(tmpDir, 'oldReplayImport.js');
     const actual2 = getDirFileContent(tmpDir, 'oldReplayNamespaceImport.js');
 
-    assertStringEquals(
-      actual1,
+    expect(actual1).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -71,11 +69,11 @@ Sentry.init({
       errorSampleRate: 0.75,
     }),
   ],
-});`
+});
+`
     );
 
-    assertStringEquals(
-      actual2,
+    expect(actual2).toEqual(
       `import * as Sentry from '@sentry/react';
 
 Sentry.init({
@@ -85,7 +83,8 @@ Sentry.init({
       errorSampleRate: 0.75,
     }),
   ],
-});`
+});
+`
     );
   });
 });

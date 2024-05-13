@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
 import { rmSync } from 'node:fs';
 
+import { afterEach, describe, it, expect } from 'vitest';
+
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import configureScopeTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | configureScope', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(configureScopeTransformer.name, 'Use getCurrentScope() instead of configureScope()');
+    expect(configureScopeTransformer.name).toEqual('Use getCurrentScope() instead of configureScope()');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | configureScope', () => {
     await configureScopeTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with example files', async () => {
@@ -38,8 +37,7 @@ describe('transformers | configureScope', () => {
     const withRequire = getDirFileContent(tmpDir, 'withRequire.js');
     const onHub = getDirFileContent(tmpDir, 'onHub.js');
 
-    assertStringEquals(
-      withImports,
+    expect(withImports).toEqual(
       `import { getCurrentScope } from '@sentry/browser';
 import * as Sentry from '@sentry/browser';
 
@@ -73,11 +71,11 @@ function doSomething() {
 
   getCurrentScope().addAttachment({ filename: 'scope.file', data: 'great content!' });
   Sentry.getCurrentScope().addAttachment({ filename: 'scope.file', data: 'great content!' });
-}`
+}
+`
     );
 
-    assertStringEquals(
-      withImportsTs,
+    expect(withImportsTs).toEqual(
       `import { getCurrentScope } from '@sentry/browser';
 import * as Sentry from '@sentry/browser';
 
@@ -109,8 +107,7 @@ function doSomething(): void {
 `
     );
 
-    assertStringEquals(
-      withRequire,
+    expect(withRequire).toEqual(
       `const { getCurrentScope } = require('@sentry/browser');
 const Sentry = require('@sentry/browser');
 
@@ -138,11 +135,11 @@ function doSomething() {
     scope.setTag('ccc', 'ccc');
     scope.setExtra('ddd', { ddd: 'ddd' });
   };
-}`
+}
+`
     );
 
-    assertStringEquals(
-      onHub,
+    expect(onHub).toEqual(
       `import { getCurrentHub } from '@sentry/browser';
 import * as Sentry from '@sentry/browser';
 
@@ -176,7 +173,8 @@ function doSomething() {
     scope.setTag('aaa', 'aaa');
     scope.setExtra('bbb', { bbb: 'bbb' });
   };
-}`
+}
+`
     );
   });
 });

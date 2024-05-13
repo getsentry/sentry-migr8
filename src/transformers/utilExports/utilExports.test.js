@@ -1,9 +1,8 @@
-import { afterEach, describe, it } from 'node:test';
-import * as assert from 'node:assert';
-import { rmSync } from 'node:fs';
+import { rmSync } from 'fs';
+
+import { afterEach, describe, it, expect } from 'vitest';
 
 import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-helpers/testPaths.js';
-import { assertStringEquals } from '../../../test-helpers/assert.js';
 
 import utilExportsTransformer from './index.js';
 
@@ -18,7 +17,7 @@ describe('transformers | utilExports', () => {
   });
 
   it('has correct name', () => {
-    assert.equal(utilExportsTransformer.name, 'Util Exports v7>v8');
+    expect(utilExportsTransformer.name).toBe('Util Exports v7>v8');
   });
 
   it('works with app without Sentry', async () => {
@@ -26,7 +25,7 @@ describe('transformers | utilExports', () => {
     await utilExportsTransformer.transform([tmpDir], { filePatterns: [] });
 
     const actual1 = getDirFileContent(tmpDir, 'app.js');
-    assert.equal(actual1, getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
+    expect(actual1).toEqual(getDirFileContent(`${process.cwd()}/test-fixtures/noSentry`, 'app.js'));
   });
 
   it('works with imports', async () => {
@@ -37,8 +36,7 @@ describe('transformers | utilExports', () => {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { severityLevelFromString, GLOBAL_OBJ, timestampInSeconds } from '@sentry/utils';
 import * as SentryUtils from '@sentry/utils';
 
@@ -48,7 +46,8 @@ function doSomething() {
   const c = GLOBAL_OBJ;
   const d = timestampInSeconds + 1000;
   const e = SentryUtils.timestampInSeconds + 1000;
-}`
+}
+`
     );
   });
 
@@ -60,8 +59,7 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const { severityLevelFromString, GLOBAL_OBJ, timestampInSeconds } = require('@sentry/utils');
 const SentryUtils = require('@sentry/utils');
 
@@ -71,7 +69,8 @@ function doSomething() {
   const c = GLOBAL_OBJ;
   const d = timestampInSeconds + 1000;
   const e = SentryUtils.timestampInSeconds + 1000;
-}`
+}
+`
     );
   });
 
@@ -83,15 +82,15 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `import { severityLevelFromString, other } from '@sentry/utils';
 
 function doSomething() {
   const a = severityLevelFromString('warning');
   const b = severityLevelFromString('warning');
   const c = other();
-}`
+}
+`
     );
   });
 
@@ -103,8 +102,7 @@ function doSomething() {
 
     const actual = getDirFileContent(tmpDir, file);
 
-    assertStringEquals(
-      actual,
+    expect(actual).toEqual(
       `const {
   severityLevelFromString,
   other
@@ -114,7 +112,8 @@ function doSomething() {
   const a = severityLevelFromString('warning');
   const b = severityLevelFromString();
   const c = other();
-}`
+}
+`
     );
   });
 });
