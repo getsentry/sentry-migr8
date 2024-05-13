@@ -105,14 +105,22 @@ export async function runWithTelementry(options) {
 
   await traceStep('run-transformers', async () => {
     for (const transformer of transformers) {
+      const showSpinner = !transformer.requiresUserInput;
+
       const s = spinner();
-      s.start(`Running transformer "${transformer.name}"...`);
+      if (showSpinner) {
+        s.start(`Running transformer "${transformer.name}"...`);
+      }
 
       try {
         await traceStep(transformer.name, () => transformer.transform(files, { ...options, sdk: targetSdk }));
-        s.stop(`Transformer "${transformer.name}" completed.`);
+        if (showSpinner) {
+          s.stop(`Transformer "${transformer.name}" completed.`);
+        }
       } catch (error) {
-        s.stop(`Transformer "${transformer.name}" failed to complete with error:`);
+        if (showSpinner) {
+          s.stop(`Transformer "${transformer.name}" failed to complete with error:`);
+        }
         // eslint-disable-next-line no-console
         console.error(error);
       }

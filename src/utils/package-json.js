@@ -15,6 +15,8 @@ export const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/serverless',
 
   // Base SDKs
+  '@sentry/deno',
+  '@sentry/bun',
   '@sentry/browser',
   '@sentry/node',
 ];

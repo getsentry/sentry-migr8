@@ -32,6 +32,14 @@ You can run `npx @sentry/migr8 --help` to get a list of available options.
 
 ## Transformations
 
+## Move @sentry/node config into instrument.js file
+
+When using `@sentry/node` in v8, it is required to call `Sentry.init()` before anything else is required/imported.
+Because of this, the recommended way to initialize Sentry is in a separate file (e.g. `instrument.js`) which is
+required/imported at the very top of your application file.
+
+This transform will try to detect this case and create a standalone instrumentation file for you.
+
 ### Add migration comments
 
 There are certain things that migr8 cannot auto-fix for you. This is the case for things like `startTransaction()`,

@@ -17,6 +17,12 @@ export interface Transformer {
   name: string;
 
   /**
+   * Whether the transformer requires user input to run
+   * If true, the transformer won't show a spinner to avoid cluttering the spinner with user prompts.
+   */
+  requiresUserInput?: boolean;
+
+  /**
    * Takes a list of files and applies whatever transformation/modification is necessary
    *
    * @param files
