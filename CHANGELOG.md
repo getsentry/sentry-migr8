@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- ref: Use latest Sentry v7 SDK for telemetry collection (#47)
+
 ## 0.2.0
 
 - feat: Add transform to extract node config into separate file (#41)
