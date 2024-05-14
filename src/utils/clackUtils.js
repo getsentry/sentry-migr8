@@ -21,11 +21,8 @@ import { traceStep } from './telemetry.js';
 export async function abortIfCancelled(input) {
   if (isCancel(await input)) {
     cancel('Migr8 run cancelled, see you next time :)');
-    const sentryHub = Sentry.getCurrentHub();
-    const sentryTransaction = sentryHub.getScope().getTransaction();
-    sentryTransaction?.setStatus('cancelled');
-    sentryTransaction?.finish();
-    sentryHub.captureSession(true);
+    Sentry.getActiveSpan()?.setStatus('ok');
+    Sentry.getActiveSpan()?.end();
     await Sentry.flush(3000);
     process.exit(0);
   } else {
@@ -145,15 +142,13 @@ function hasChangedFiles() {
  */
 async function abort(customMessage, exitCode = 0) {
   cancel(customMessage ?? 'Exiting, see you next time :)');
-  const sentryHub = Sentry.getCurrentHub();
-  const sentryTransaction = sentryHub.getScope().getTransaction();
-  sentryTransaction?.setStatus('aborted');
-  sentryTransaction?.finish();
-  const sentrySession = sentryHub.getScope().getSession();
+  Sentry.getActiveSpan()?.setStatus('ok');
+  const sentrySession = Sentry.getCurrentScope().getSession();
   if (sentrySession) {
-    sentrySession.status = exitCode === 0 ? 'abnormal' : 'crashed';
-    sentryHub.captureSession(true);
+    sentrySession.status = 'abnormal';
   }
+  Sentry.endSession();
+
   await Sentry.flush(3000);
   process.exit(exitCode);
 }

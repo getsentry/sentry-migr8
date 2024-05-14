@@ -30,6 +30,8 @@ export async function run(options) {
  * @param {import("types").RunOptions} options
  */
 export async function runWithTelemetry(options) {
+  Sentry.metrics.increment('executions');
+
   traceStep('intro', () => {
     intro(chalk.inverse('Welcome to sentry-migr8!'));
     note(
@@ -85,7 +87,7 @@ export async function runWithTelemetry(options) {
     )
   );
 
-  Sentry.setTag('apply-all-transformers', applyAllTransformers);
+  Sentry.metrics.distribution('apply-all-transformers', applyAllTransformers ? 1 : 0, { unit: 'percent' });
 
   let transformers = allTransformers;
   if (!applyAllTransformers) {
@@ -107,6 +109,7 @@ export async function runWithTelemetry(options) {
 
   await traceStep('run-transformers', async () => {
     for (const transformer of transformers) {
+      Sentry.metrics.set('transforms.selected', transformer.name);
       const showSpinner = !transformer.requiresUserInput;
 
       const s = spinner();
@@ -119,12 +122,14 @@ export async function runWithTelemetry(options) {
         if (showSpinner) {
           s.stop(`Transformer "${transformer.name}" completed.`);
         }
+        Sentry.metrics.set('transforms.success', transformer.name);
       } catch (error) {
         if (showSpinner) {
           s.stop(`Transformer "${transformer.name}" failed to complete with error:`);
         }
         // eslint-disable-next-line no-console
         console.error(error);
+        Sentry.metrics.set('transforms.fail', transformer.name);
       }
     }
   });
@@ -135,6 +140,8 @@ export async function runWithTelemetry(options) {
     log.success('All transformers completed!');
     outro('Thank you for using @sentry/migr8!');
   });
+
+  Sentry.metrics.increment('executions.success');
 }
 
 /**
