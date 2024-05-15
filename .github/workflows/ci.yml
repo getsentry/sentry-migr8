@@ -43,7 +43,7 @@ jobs:
   # Only run E2E tests on Wwindows
   e2e-test-windows:
     name: E2E test (Windows)
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Check out current commit
         uses: actions/checkout@v3
