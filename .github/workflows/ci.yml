@@ -38,7 +38,7 @@ jobs:
         run: pnpm lint
 
       - name: Run tests
-        run: cmd pnpm test
+        run: pnpm test
 
   # Only run E2E tests on Wwindows
   e2e-test-windows:
@@ -63,7 +63,7 @@ jobs:
         run: pnpm install
 
       - name: Run e2e test
-        run: pnpm test:e2e
+        run: cmd pnpm test:e2e
 
   artifacts:
     name: Pack & Upload Artifacts
