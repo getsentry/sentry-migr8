@@ -40,6 +40,57 @@ jobs:
       - name: Run tests
         run: pnpm test
 
+  # Only run E2E tests on Wwindows
+  e2e-test-windows:
+    name: E2E test (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Uninstall Git for Windows
+        run: |
+          powershell -Command "Uninstall-Package -Name 'Git'"
+          powershell -Command "Remove-Item 'C:\Program Files\Git' -Recurse -Force"
+        shell: powershell
+
+      - name: Check out current commit
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          cache: pnpm
+
+      # - name: Clean sh.exe
+      #   run: |
+      #     where sh
+      #     rm -f 'C:\Program Files\Git\usr\bin\sh.exe'
+      #     rm -f 'C:\Program Files\Git\bin\sh.exe'
+      #   shell: bash
+
+      # - name: Clean bash.exe
+      #   run: |
+      #     where bash
+      #     del "C:\Program Files\Git\usr\bin\bash.exe"
+      #     del "C:\Program Files\Git\bin\bash.exe"
+      #   shell: cmd
+
+      - name: Install dependencies
+        shell: pwsh
+        run: pnpm install
+
+      # - name: Git
+      #   shell: pwsh
+      #   run: git status
+
+      - name: Run e2e test
+        shell: cmd
+        run: pnpm test:e2e
+
   artifacts:
     name: Pack & Upload Artifacts
     runs-on: ubuntu-20.04
