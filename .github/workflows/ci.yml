@@ -58,6 +58,12 @@ jobs:
         with:
           node-version-file: 'package.json'
           cache: pnpm
+      - name: Clean sh.exe
+        run: |
+          where sh
+          rm 'C:\Program Files\Git\usr\bin\sh.exe'
+          rm 'C:\Program Files\Git\bin\sh.exe'
+        shell: bash
 
       - name: Install dependencies
         shell: bash
