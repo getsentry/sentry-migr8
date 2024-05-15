@@ -9,6 +9,8 @@ import sdkLatestVersionTransformer from './index.js';
 
 describe('transformers | sdkLatestVersion', () => {
   let tmpDir = '';
+  // hub was discontinued in v8; so getting the latest version gives us the latest v7 version cheaply.
+  const latestV7Version = execSync('npm show @sentry/hub version').toString().trim();
   const latestVersion = execSync('npm show @sentry/browser version').toString().trim();
 
   afterEach(() => {
@@ -71,11 +73,11 @@ describe('transformers | sdkLatestVersion', () => {
     expect(actual).toEqual(
       `{
   "dependencies": {
-    "@sentry/hub": "^${latestVersion}",
-    "@sentry/integrations": "^${latestVersion}",
+    "@sentry/hub": "^${latestV7Version}",
+    "@sentry/integrations": "^${latestV7Version}",
     "@sentry/react": "^${latestVersion}",
-    "@sentry/replay": "^${latestVersion}",
-    "@sentry/tracing": "^${latestVersion}",
+    "@sentry/replay": "^${latestV7Version}",
+    "@sentry/tracing": "^${latestV7Version}",
     "is-even": "1.0.0"
   },
   "devDependencies": {
@@ -95,13 +97,13 @@ describe('transformers | sdkLatestVersion', () => {
     expect(actual).toEqual(
       `{
   "dependencies": {
-    "@sentry/integrations": "^${latestVersion}",
+    "@sentry/integrations": "^${latestV7Version}",
     "is-even": "1.0.0"
   },
   "devDependencies": {
-    "@sentry/hub": "^${latestVersion}",
+    "@sentry/hub": "^${latestV7Version}",
     "@sentry/react": "^${latestVersion}",
-    "@sentry/tracing": "^${latestVersion}",
+    "@sentry/tracing": "^${latestV7Version}",
     "is-odd": "3.0.1"
   }
 }
@@ -118,10 +120,10 @@ describe('transformers | sdkLatestVersion', () => {
     expect(actual).toEqual(
       `{
   "dependencies": {
-    "@sentry/hub": "^${latestVersion}",
-    "@sentry/integrations": "^${latestVersion}",
+    "@sentry/hub": "^${latestV7Version}",
+    "@sentry/integrations": "^${latestV7Version}",
     "@sentry/react": "^${latestVersion}",
-    "@sentry/replay": "^${latestVersion}",
+    "@sentry/replay": "^${latestV7Version}",
     "is-even": "1.0.0"
   },
   "devDependencies": {
@@ -141,10 +143,10 @@ describe('transformers | sdkLatestVersion', () => {
     expect(actual).toEqual(
       `{
   "dependencies": {
-    "@sentry/hub": "~${latestVersion}",
-    "@sentry/integrations": "~${latestVersion}",
+    "@sentry/hub": "~${latestV7Version}",
+    "@sentry/integrations": "~${latestV7Version}",
     "@sentry/react": "~${latestVersion}",
-    "@sentry/replay": "~${latestVersion}",
+    "@sentry/replay": "~${latestV7Version}",
     "is-even": "1.0.0"
   },
   "devDependencies": {
