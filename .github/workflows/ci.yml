@@ -60,10 +60,11 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
+        shell: cmd
         run: pnpm install
 
       - name: Run e2e test
-        shell: PowerShell
+        shell: cmd
         run: pnpm test:e2e
 
   artifacts:
