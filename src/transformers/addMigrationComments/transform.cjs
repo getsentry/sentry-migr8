@@ -1,3 +1,5 @@
+const Sentry = require('@sentry/node');
+
 const { wrapJscodeshift } = require('../../utils/dom.cjs');
 const { addTodoComment } = require('../../utils/jscodeshift.cjs');
 
@@ -89,6 +91,11 @@ module.exports = function (fileInfo, api) {
         );
       }
     });
+
+    if (hasChanges) {
+      Sentry.setTag('added-todo-comments', true);
+      Sentry.metrics.increment('added-todo-comments', 1);
+    }
 
     return hasChanges ? tree.toSource() : undefined;
   });
