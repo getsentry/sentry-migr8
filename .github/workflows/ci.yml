@@ -69,20 +69,20 @@ jobs:
       - name: Clean bash.exe
         run: |
           where bash
-          rm -f 'C:\Program Files\Git\usr\bin\sh.exe'
+          rm -f 'C:\Program Files\Git\usr\bin\bash.exe'
           rm -f 'C:\Program Files\Git\bin\sh.exe'
         shell: bash
 
       - name: Install dependencies
-        shell: cmd
+        shell: bash
         run: pnpm install
 
       - name: Git
-        shell: cmd
+        shell: bash
         run: git status
 
       - name: Run e2e test
-        shell: cmd
+        shell: bash
         run: pnpm test:e2e
 
   artifacts:
