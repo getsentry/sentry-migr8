@@ -70,7 +70,7 @@ jobs:
         run: |
           where bash
           rm -f 'C:\Program Files\Git\usr\bin\bash.exe'
-          rm -f 'C:\Program Files\Git\bin\sh.exe'
+          rm -f 'C:\Program Files\Git\bin\bash.exe'
         shell: bash
 
       - name: Install dependencies
