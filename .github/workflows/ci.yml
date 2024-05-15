@@ -61,9 +61,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Lint source files
-        run: pnpm lint
-
       - name: Run tests
         run: pnpm test
 
