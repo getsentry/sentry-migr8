@@ -22,7 +22,7 @@ export async function withTelemetry(options, callback) {
     release: packageJson.version,
 
     defaultIntegrations: false,
-    integrations: [Sentry.httpIntegration()],
+    integrations: [Sentry.httpIntegration(), Sentry.nodeContextIntegration()],
 
     tracePropagationTargets: [/^https:\/\/sentry.io\//],
 
@@ -30,6 +30,12 @@ export async function withTelemetry(options, callback) {
 
     beforeSendTransaction: event => {
       delete event.server_name; // Server name might contain PII
+
+      event.contexts = {
+        os: event.contexts?.os,
+        trace: event.contexts?.trace,
+      };
+
       return event;
     },
 
@@ -38,7 +44,11 @@ export async function withTelemetry(options, callback) {
         delete exception.stacktrace;
       });
 
-      delete event.server_name; // Server name might contain PII
+      event.contexts = {
+        os: event.contexts?.os,
+        trace: event.contexts?.trace,
+      };
+
       return event;
     },
 
