@@ -86,6 +86,11 @@ jobs:
       # - name: Git
       #   shell: pwsh
       #   run: git status
+      - name: Uninstall Git for Windows
+        run: |
+          powershell -Command "Uninstall-Package -Name 'Git'"
+          powershell -Command "Remove-Item 'C:\Program Files\Git' -Recurse -Force"
+        shell: powershell
 
       - name: Run e2e test
         shell: cmd
