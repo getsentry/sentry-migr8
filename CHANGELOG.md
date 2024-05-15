@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
 
 - ref: Use latest Sentry v7 SDK for telemetry collection (#47)
 - fix: Fix migr8 crashing on windows due to Unix path delimiters (#50)
