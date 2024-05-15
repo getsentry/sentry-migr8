@@ -14,8 +14,35 @@ concurrency:
 
 jobs:
   test:
-    name: Build & Test
+    name: Build & Test (Linux)
     runs-on: ubuntu-20.04
+    steps:
+      - name: Check out current commit
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint source files
+        run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
+
+  tes-windows:
+    name: Build & Test (Windows)
+    runs-on: windows-latest
     steps:
       - name: Check out current commit
         uses: actions/checkout@v3
