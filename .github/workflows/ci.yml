@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   test:
-    name: Build & Test
+    name: Build & Test (Linux)
     runs-on: ubuntu-20.04
     steps:
       - name: Check out current commit
