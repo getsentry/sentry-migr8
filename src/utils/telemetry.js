@@ -31,6 +31,7 @@ export async function withTelemetry(options, callback) {
     beforeSendTransaction: event => {
       delete event.server_name; // Server name might contain PII
 
+      // limit any collected contexts to OS and trace
       event.contexts = {
         os: event.contexts?.os,
         trace: event.contexts?.trace,
@@ -44,6 +45,7 @@ export async function withTelemetry(options, callback) {
         delete exception.stacktrace;
       });
 
+      // limit any collected contexts to OS and trace
       event.contexts = {
         os: event.contexts?.os,
         trace: event.contexts?.trace,
