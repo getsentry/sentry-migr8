@@ -30,7 +30,8 @@
     "fix:eslint": "eslint . --format stylish --fix",
     "fix:prettier": "prettier --write \"{src,test-helpers,test-fixtures}/**/*.js\"",
     "dev": "node ./src/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "vitest run ./src/index.test.js"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
