@@ -69,9 +69,9 @@ jobs:
       - name: Clean bash.exe
         run: |
           where bash
-          rm -f 'C:\Program Files\Git\usr\bin\bash.exe'
-          rm -f 'C:\Program Files\Git\bin\bash.exe'
-        shell: bash
+          del "C:\Program Files\Git\usr\bin\bash.exe"
+          del "C:\Program Files\Git\bin\bash.exe"
+        shell: cmd
 
       - name: Install dependencies
         shell: bash
