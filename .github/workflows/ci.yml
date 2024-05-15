@@ -63,7 +63,8 @@ jobs:
         run: pnpm install
 
       - name: Run e2e test
-        run: cmd pnpm test:e2e
+        shell: cmd
+        run: pnpm test:e2e
 
   artifacts:
     name: Pack & Upload Artifacts
