@@ -63,7 +63,7 @@ jobs:
         run: pnpm install
 
       - name: Run e2e test
-        shell: bash
+        shell: PowerShell
         run: pnpm test:e2e
 
   artifacts:
