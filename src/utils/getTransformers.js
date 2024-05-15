@@ -19,7 +19,7 @@ export function getTransformers() {
  * @returns {Promise<import('types').Transformer>}
  */
 async function getTransformer(filePath) {
-  const file = await import(filePath);
+  const file = await import(url.pathToFileURL(filePath).toString());
 
   return file.default;
 }
