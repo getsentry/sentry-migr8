@@ -8,18 +8,23 @@ import { getCliPath, getFixturePath, makeTmpDir } from './testPaths.js';
 
 /**
  * @param {string} testAppName
- * @param {{ logLevel?: import('clet').LogLevel, timeout?: number, skipGitChecks?: boolean }} options
+ * @param {{ logLevel?: import('clet').LogLevel, timeout?: number, skipGitChecks?: boolean, args?: string[] }} options
  * @returns {import('clet').TestRunner}
  */
-export function defaultRunner(testAppName, { logLevel = LogLevel.INFO, timeout = 10_000, skipGitChecks = true } = {}) {
+export function defaultRunner(
+  testAppName,
+  { logLevel = LogLevel.INFO, timeout = 10_000, skipGitChecks = true, args } = {}
+) {
   const testApp = getFixturePath(testAppName);
   const tmpPath = makeTmpDir(testApp);
+
+  const additionalArgs = args ?? [];
 
   const res = runner()
     .cwd(tmpPath, { init: true, clean: true })
     .debug(logLevel)
     .timeout(timeout)
-    .fork(getCliPath(), skipGitChecks ? ['--skipGitChecks=true', '--disableTelemetry'] : [], {});
+    .fork(getCliPath(), skipGitChecks ? ['--skipGitChecks=true', '--disableTelemetry', ...additionalArgs] : [], {});
 
   return res;
 }

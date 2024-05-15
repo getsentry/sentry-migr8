@@ -6,7 +6,7 @@ import { readdirSync } from 'fs';
  * @returns {Promise<import('types').Transformer[]>}
  */
 export function getTransformers() {
-  const transformersPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), '../transformers');
+  const transformersPath = path.join(path.dirname(url.fileURLToPath(import.meta.url)), '..', 'transformers');
   const transformers = readdirSync(transformersPath);
 
   return Promise.all(
@@ -19,7 +19,7 @@ export function getTransformers() {
  * @returns {Promise<import('types').Transformer>}
  */
 async function getTransformer(filePath) {
-  const file = await import(filePath);
+  const file = await import(url.pathToFileURL(filePath).toString());
 
   return file.default;
 }
