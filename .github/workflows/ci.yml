@@ -66,15 +66,15 @@ jobs:
         shell: bash
 
       - name: Install dependencies
-        shell: bash
+        shell: cmd
         run: pnpm install
 
       - name: Git
-        shell: bash
+        shell: cmd
         run: git status
 
       - name: Run e2e test
-        shell: bash
+        shell: cmd
         run: pnpm test:e2e
 
   artifacts:
