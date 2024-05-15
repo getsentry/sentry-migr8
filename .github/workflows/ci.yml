@@ -63,6 +63,10 @@ jobs:
         shell: bash
         run: pnpm install
 
+      - name: Git
+        shell: bash
+        run: git status
+
       - name: Run e2e test
         shell: bash
         run: pnpm test:e2e
