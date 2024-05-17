@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- feat: Ask for SDK selection if auto-detection fails (#53)
+- ref: Reword intro section (#53)
+- telemetry: Fix missing telemetry tags (#53)
+- telemetry: Enable metrics collection (#53)
+
 ## 0.2.1
 
 - ref: Use latest Sentry v7 SDK for telemetry collection (#47)
