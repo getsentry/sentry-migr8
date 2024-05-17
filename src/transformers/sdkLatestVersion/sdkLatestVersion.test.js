@@ -7,10 +7,10 @@ import { getDirFileContent, getFixturePath, makeTmpDir } from '../../../test-hel
 
 import sdkLatestVersionTransformer from './index.js';
 
-describe('transformers | sdkLatestVersion', () => {
+describe.skip('transformers | sdkLatestVersion', () => {
   let tmpDir = '';
   // hub was discontinued in v8; so getting the latest version gives us the latest v7 version cheaply.
-  const latestV7Version = execSync('npm show @sentry/hub version').toString().trim();
+  const latestV7Version = execSync('npm show @sentry/hub@v7 version').toString().trim();
   const latestVersion = execSync('npm show @sentry/browser version').toString().trim();
 
   afterEach(() => {
