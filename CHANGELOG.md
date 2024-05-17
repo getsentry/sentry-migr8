@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2
 
 - feat: Ask for SDK selection if auto-detection fails (#53)
 - ref: Reword intro section (#53)
