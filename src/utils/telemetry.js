@@ -1,8 +1,11 @@
 import fs from 'fs';
+import path from 'path';
 
 import * as Sentry from '@sentry/node';
 
-const packageJson = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url)).toString());
+const packageJson = JSON.parse(
+  fs.readFileSync(new URL(path.join('..', '..', 'package.json'), import.meta.url)).toString()
+);
 
 /**
  *
@@ -56,6 +59,10 @@ export async function withTelemetry(options, callback) {
 
     transport: Sentry.makeNodeTransport,
 
+    _experiments: {
+      metricsAggregator: true,
+    },
+
     debug: false,
   });
 
@@ -69,7 +76,9 @@ export async function withTelemetry(options, callback) {
       Sentry.captureSession();
 
       try {
-        return await Sentry.withScope(() => callback());
+        const res = await Sentry.withScope(() => callback());
+        span?.setStatus('ok');
+        return res;
       } catch (e) {
         Sentry.captureException('Error during migr8 execution.');
         span?.setStatus('error');

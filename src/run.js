@@ -4,9 +4,11 @@ import { intro, outro, select, multiselect, spinner, note, log } from '@clack/pr
 import { globby } from 'globby';
 import chalk from 'chalk';
 import * as Sentry from '@sentry/node';
+import { minVersion } from 'semver';
 
 import { getTransformers } from './utils/getTransformers.js';
 import {
+  abort,
   abortIfCancelled,
   checkGitStatus,
   checkIsInWorkspace,
@@ -32,28 +34,7 @@ export async function run(options) {
 export async function runWithTelemetry(options) {
   Sentry.metrics.increment('executions');
 
-  traceStep('intro', () => {
-    intro(chalk.inverse('Welcome to sentry-migr8!'));
-    note(
-      `This command line tool will update your Sentry JavaScript setup to the latest version.
-
-  We will guide you through the process step by step.${
-    !options.disableTelemetry
-      ? `
-  This tool collects anonymous telemetry data and sends it to Sentry.
-  You can disable this by passing the --disableTelemetry option.`
-      : ''
-  }`
-    );
-
-    note(`We will run code transforms on files matching the following ${
-      options.filePatterns.length > 1 ? 'patterns' : 'pattern'
-    }, ignoring any .gitignored files:
-
-  ${options.filePatterns.join('\n')}
-
-  (You can change this by specifying the --filePatterns option)`);
-  });
+  printIntroMessages(options);
 
   const cwd = options.cwd ?? process.cwd();
   const ignore =
@@ -71,7 +52,17 @@ export async function runWithTelemetry(options) {
 
   await traceStep('check-in-workspace', () => checkIsInWorkspace(packageJSON));
 
-  let targetSdk = options.sdk ?? detectSdk(packageJSON);
+  /** @type {import('types').NpmPackage} */
+  let targetSdk =
+    options.sdk && options.currentVersion
+      ? { name: options.sdk, version: options.currentVersion }
+      : await getSdk(packageJSON);
+
+  log.info(`Your Sentry SDK: ${chalk.cyan(`${targetSdk.name}@${targetSdk.version}`)}`);
+
+  const targetSdkMinVersion = minVersion(targetSdk.version);
+
+  await exitIfSdkVersionTooOld(targetSdkMinVersion, targetSdk);
 
   const allTransformers = await getTransformers();
 
@@ -87,6 +78,7 @@ export async function runWithTelemetry(options) {
     )
   );
 
+  Sentry.setTag('apply-all-transformers', !!applyAllTransformers);
   Sentry.metrics.distribution('apply-all-transformers', applyAllTransformers ? 1 : 0, { unit: 'percent' });
 
   let transformers = allTransformers;
@@ -118,7 +110,7 @@ export async function runWithTelemetry(options) {
       }
 
       try {
-        await traceStep(transformer.name, () => transformer.transform(files, { ...options, sdk: targetSdk }));
+        await traceStep(transformer.name, () => transformer.transform(files, { ...options, sdk: targetSdk.name }));
         if (showSpinner) {
           s.stop(`Transformer "${transformer.name}" completed.`);
         }
@@ -142,25 +134,88 @@ export async function runWithTelemetry(options) {
   });
 
   Sentry.metrics.increment('executions.success');
+  Sentry.getActiveSpan()?.setStatus('ok');
+}
+
+/**
+ *
+ * @param {import('semver').SemVer | null} targetSdkMinVersion
+ * @param {import('types').NpmPackage} targetSdk
+ */
+async function exitIfSdkVersionTooOld(targetSdkMinVersion, targetSdk) {
+  if (!targetSdkMinVersion || targetSdkMinVersion.major < 7) {
+    log.error(
+      `Your Sentry SDK version ${chalk.cyan(targetSdk.version)} is too old. Please upgrade to at least ${chalk.cyan(
+        '7.x'
+      )} to use this tool.`
+    );
+    Sentry.metrics.increment('executions.fail', 1, { tags: { reason: 'sdk-too-old' } });
+    await abort('Exiting, please run this tool again after upgrading your SDK.', 0);
+  }
+}
+
+/**
+ * @param {import("types").RunOptions} options
+ */
+function printIntroMessages(options) {
+  traceStep('intro', () => {
+    intro(chalk.inverse('Welcome to sentry-migr8!'));
+    note(
+      `We will guide you through the process step by step.${
+        !options.disableTelemetry
+          ? `
+
+We're collecting anonymous telemetry data and sends it to Sentry improve migr8.
+You can disable this by passing the ${chalk.cyan('--disableTelemetry')} option.`
+          : ''
+      }`,
+      'This tool helps you update your Sentry JavaScript SDK'
+    );
+
+    note(`We will run code transforms on files matching the following ${
+      options.filePatterns.length > 1 ? 'patterns' : 'pattern'
+    }, ignoring any .gitignored files:
+
+${chalk.cyan(options.filePatterns.join('\n'))}
+
+(You can change this by specifying the ${chalk.cyan('--filePatterns')} option)`);
+  });
 }
 
 /**
  * @param {import('types').PackageDotJson} packageJSON
- * @returns {string | undefined}
+ * @returns {Promise<import('types').NpmPackage>}
  */
-function detectSdk(packageJSON) {
+async function getSdk(packageJSON) {
   const sdkPackage = findInstalledPackageFromList(SENTRY_SDK_PACKAGE_NAMES, packageJSON);
 
-  const sdkName = sdkPackage ? sdkPackage.name : undefined;
-
-  if (sdkName) {
-    log.info(`Detected SDK: ${chalk.cyan(sdkName)}`);
-  } else {
-    log.info(
-      `No Sentry SDK detected. Skipping all import-rewriting transformations.
-Specify --sdk if you want to override the detection.`
-    );
+  if (sdkPackage) {
+    return sdkPackage;
   }
 
-  return sdkName;
+  log.warn(
+    `Couldn't detect your Sentry SDK. This sometimes happens if we can't read your ${chalk.cyan('package.json')}`
+  );
+  const selectedSdk = await abortIfCancelled(
+    select({
+      message: 'To continue, please select your Sentry SDK:',
+      options: SENTRY_SDK_PACKAGE_NAMES.map(sdk => ({ value: sdk, label: sdk })).sort((a, b) =>
+        a.label.localeCompare(b.label)
+      ),
+      maxItems: 12,
+    })
+  );
+
+  const selectedSdkVersion = await abortIfCancelled(
+    select({
+      message: `Which version of ${chalk.cyan(selectedSdk)} are you currently using?`,
+      options: [
+        { value: '7.x', label: '7.x' },
+        { value: '8.x', label: '8.x' },
+        { value: '6.x', label: '6.x or older' },
+      ],
+    })
+  );
+
+  return { name: selectedSdk, version: selectedSdkVersion };
 }

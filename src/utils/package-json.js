@@ -4,6 +4,7 @@ export const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/nextjs',
   '@sentry/remix',
   '@sentry/sveltekit',
+  '@sentry/astro',
 
   // Framework SDKs
   '@sentry/angular',
@@ -13,6 +14,8 @@ export const SENTRY_SDK_PACKAGE_NAMES = [
   '@sentry/svelte',
   '@sentry/vue',
   '@sentry/serverless',
+  '@sentry/aws-serverless',
+  '@sentry/google-cloud-serverless',
 
   // Base SDKs
   '@sentry/deno',
