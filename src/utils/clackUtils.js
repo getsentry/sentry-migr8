@@ -21,7 +21,7 @@ import { traceStep } from './telemetry.js';
 export async function abortIfCancelled(input) {
   if (isCancel(await input)) {
     cancel('Migr8 run cancelled, see you next time :)');
-    Sentry.getActiveSpan()?.setStatus('ok');
+    Sentry.getActiveSpan()?.setStatus('cancelled');
     Sentry.getActiveSpan()?.end();
     await Sentry.flush(3000);
     process.exit(0);
@@ -59,16 +59,23 @@ export async function checkGitStatus() {
 
   const hasChanges = hasChangedFiles();
   if (hasChanges) {
+    log.warn(`You have uncommitted changes in your git repository.
+
+We recommend starting the upgrade in a clean state because we'll modify some files.`);
     const continueWithChanges = await abortIfCancelled(
       confirm({
-        message: 'You have uncommitted changes in your git repository. Do you still want to continue?',
+        message: 'Do you want to continue anyway?',
         initialValue: false,
       })
     );
 
     if (!continueWithChanges) {
+      Sentry.metrics.increment('git-changes-aborted');
       await abort();
+      return;
     }
+
+    Sentry.metrics.increment('git-changes-continue');
   }
 }
 
@@ -140,9 +147,9 @@ function hasChangedFiles() {
  * @param {string=} customMessage
  * @param {number=} exitCode
  */
-async function abort(customMessage, exitCode = 0) {
+export async function abort(customMessage, exitCode = 0) {
   cancel(customMessage ?? 'Exiting, see you next time :)');
-  Sentry.getActiveSpan()?.setStatus('ok');
+  Sentry.getActiveSpan()?.setStatus('aborted');
   const sentrySession = Sentry.getCurrentScope().getSession();
   if (sentrySession) {
     sentrySession.status = 'abnormal';

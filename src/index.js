@@ -48,6 +48,11 @@ async function _run() {
       describe:
         "The SDK you want to apply the migrations for. By default, migr8 will try to auto-detect the SDK. If you want to override this, you set the SDK's full name (e.g. '@sentry/browser').",
     })
+    .option('currentVersion', {
+      type: 'string',
+      describe:
+        'The current version of your SDK. By default, migr8 will try to auto-detect the version. You can set the exact version (e.g. 7.44.0) or a specific range (e.g. ^7.47.0).',
+    })
     .option('cwd', {
       type: 'string',
       describe: 'The cwd dir to use. Defaults to process.cwd().',

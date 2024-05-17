@@ -5,6 +5,7 @@ export interface RunOptions {
   skipGitChecks?: boolean;
   dry?: boolean;
   sdk?: string;
+  currentVersion?: string;
   cwd?: string;
   disableTelemetry?: boolean;
 }
