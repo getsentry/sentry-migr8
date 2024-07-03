@@ -28,7 +28,7 @@ async function _run() {
     .option('ignoreFilePatterns', {
       alias: 'if',
       describe: 'Glob pattern which files should be ignored',
-      default: [],
+      default: ['node_modules'],
       type: 'string',
       array: true,
     })
