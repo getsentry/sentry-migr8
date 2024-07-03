@@ -23,5 +23,5 @@
       "types": ["./src/types/index"]
     }
   },
-  "include": ["src/**/*", "src/types/**/*", "test-helpers/**/*"]
+  "include": ["src/**/*", "src/types/**/*", "test-helpers/**/*", "scripts/**/*"]
 }

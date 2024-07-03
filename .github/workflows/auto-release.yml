@@ -1,0 +1,55 @@
+name: "Auto release"
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+
+# This workflow triggers a release when merging a branch with the pattern `prepare-release/VERSION` into main.
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: 'Prepare a new version'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_RELEASE_PAT }}
+          fetch-depth: 0
+
+      # https://github.com/actions-ecosystem/action-regex-match
+      - uses: actions-ecosystem/action-regex-match@v2
+        id: version-regex
+        with:
+          # Parse version from head branch
+          text: ${{ github.head_ref }}
+          # match: preprare-release/xx.xx.xx
+          regex: '^prepare-release\/(\d+\.\d+\.\d+)(?:-(alpha|beta|rc)\.\d+)?$'
+
+      - name: Extract version
+        id: get_version
+        run: |
+          version=${{ steps.version-regex.outputs.match }}
+          version=${version/'prepare-release/'/''}
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'package.json'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Prepare release
+        uses: getsentry/action-prepare-release@lms/write-config-branch
+        if: github.event.pull_request.merged == true && steps.version-regex.outputs.match != '' && steps.get_version.outputs.version != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
+        with:
+          version: ${{ github.event.inputs.version }}
+          force: ${{ github.event.inputs.force }}
+          merge_target: main
+          craft_config_from_merge_target: true
