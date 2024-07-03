@@ -32,7 +32,7 @@
     "dev": "node ./src/index.js",
     "test": "vitest run",
     "test:e2e": "vitest run ./src/index.test.js",
-    "changelog": "npx tsx ./scripts/get-commit-list.ts"
+    "changelog": "pnpx tsx ./scripts/get-commit-list.ts"
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
