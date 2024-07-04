@@ -11,7 +11,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     name: 'Prepare a new version'
-
+    if: startsWith(github.head_ref, 'prepare-release/')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +33,11 @@ jobs:
           version=${{ steps.version-regex.outputs.match }}
           version=${version/'prepare-release/'/''}
           echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v3
