@@ -54,7 +54,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
         with:
-          version: ${{ github.event.inputs.version }}
-          force: ${{ github.event.inputs.force }}
+          version: ${{ steps.get_version.outputs.version }}
+          force: false
           merge_target: main
           craft_config_from_merge_target: true
