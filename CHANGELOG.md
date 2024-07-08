@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- feat: Ignore `node_modules` by default for processing (#57)
+
 ## 0.2.2
 
 - feat: Ask for SDK selection if auto-detection fails (#53)
