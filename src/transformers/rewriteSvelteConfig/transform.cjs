@@ -1,3 +1,5 @@
+const { adapt } = require('jscodeshift-adapters');
+
 const { hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
 
 /**
@@ -10,7 +12,7 @@ const { hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
  * @param {import('jscodeshift').API} api
  * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
  */
-module.exports = function transform(fileInfo, api, options) {
+function rewriteSvelteConfig(fileInfo, api, options) {
   const j = api.jscodeshift;
   const source = fileInfo.source;
 
@@ -30,7 +32,7 @@ module.exports = function transform(fileInfo, api, options) {
 
   /** { @type import('jscodeshift').ASTPath<import('jscodeshift').ImportDeclaration> | undefined */
   const sentryNamespaceImport = sentryNamespaceImports.length ? sentryNamespaceImports.get() : undefined;
-  const sentryNameSpace = sentryNamespaceImport?.node.specifiers?.[0].local?.name;
+  const sentryNameSpace = sentryNamespaceImport?.node.specifiers?.[0]?.local?.name;
 
   // 1. remove `sentryComponentTrackingPreprocessor()`
 
@@ -89,4 +91,6 @@ module.exports = function transform(fileInfo, api, options) {
     });
   }
   return root.toSource();
-};
+}
+
+module.exports = adapt(rewriteSvelteConfig);
