@@ -28,7 +28,7 @@ async function _run() {
     .option('ignoreFilePatterns', {
       alias: 'if',
       describe: 'Glob pattern which files should be ignored',
-      default: ['node_modules'],
+      default: ['node_modules', '**/*.svelte'],
       type: 'string',
       array: true,
     })
