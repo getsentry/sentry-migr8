@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+- fix: Better support for `.vue`. and `.svelte` files using `jscodeshift-adapters` (#71)
+
+Work in this release was contributed by @fnimick. Thank you for your contribution!
+
 ## 0.2.3
 
 - feat: Ignore `node_modules` by default for processing (#57)
