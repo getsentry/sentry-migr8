@@ -1,5 +1,6 @@
+const { adapt } = require('jscodeshift-adapters');
+
 const { hasSentryImportOrRequire, replaceImported } = require('../../utils/jscodeshift.cjs');
-const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 /**
  * This transform converts usages of `configureScope((scope) => {})` to use `getCurrentScope()` instead.
@@ -24,149 +25,143 @@ const { wrapJscodeshift } = require('../../utils/dom.cjs');
  * @param {import('jscodeshift').API} api
  * @param {import('jscodeshift').Options & { sentry: import('types').RunOptions & {sdk: string} }} options
  */
-module.exports = function (fileInfo, api, options) {
+function configureScope(fileInfo, api, options) {
   const j = api.jscodeshift;
   const source = fileInfo.source;
-  const fileName = fileInfo.path;
 
-  return wrapJscodeshift(j, source, fileName, (j, source) => {
-    const tree = j(source);
+  const tree = j(source);
 
-    // If no sentry import, skip it
-    if (!hasSentryImportOrRequire(source)) {
-      return undefined;
+  // If no sentry import, skip it
+  if (!hasSentryImportOrRequire(source)) {
+    return undefined;
+  }
+
+  if (!source.includes('configureScope')) {
+    return undefined;
+  }
+
+  // Replace `configureScope()`
+  tree.find(j.CallExpression).forEach(path => {
+    if (path.value.callee.type !== 'Identifier' || path.value.callee.name !== 'configureScope') {
+      return;
     }
 
-    if (!source.includes('configureScope')) {
-      return undefined;
+    const callbackFn = path.value.arguments[0];
+    if (!callbackFn || (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression')) {
+      return;
     }
 
-    // Replace `configureScope()`
-    tree.find(j.CallExpression).forEach(path => {
-      if (path.value.callee.type !== 'Identifier' || path.value.callee.name !== 'configureScope') {
-        return;
-      }
+    // The var name of the scope callback, e.g. (scope) => {} would be "scope"
+    const scopeVarName = callbackFn.params[0]?.type === 'Identifier' ? callbackFn.params[0].name : undefined;
 
-      const callbackFn = path.value.arguments[0];
-      if (!callbackFn || (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression')) {
-        return;
-      }
+    if (!scopeVarName) {
+      return;
+    }
 
-      // The var name of the scope callback, e.g. (scope) => {} would be "scope"
-      const scopeVarName = callbackFn.params[0]?.type === 'Identifier' ? callbackFn.params[0].name : undefined;
+    const callbackBody = callbackFn.body;
+    const getScopeMethodName = 'getCurrentScope';
 
-      if (!scopeVarName) {
-        return;
-      }
+    // If we only have a single statement inside, we can avoid the block
+    // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
+    // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
+    const singleExpression = getExpression(callbackBody, scopeVarName);
 
-      const callbackBody = callbackFn.body;
-      const getScopeMethodName = 'getCurrentScope';
-
-      // If we only have a single statement inside, we can avoid the block
-      // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
-      // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
-      const singleExpression = getExpression(callbackBody, scopeVarName);
-
-      if (singleExpression && singleExpression.callee.type === 'MemberExpression') {
-        path.replace(
-          j.callExpression(
-            j.memberExpression(
-              j.callExpression(j.identifier(getScopeMethodName), []),
-              singleExpression.callee.property
-            ),
-            singleExpression.arguments
-          )
-        );
-        return;
-      }
-
-      if (callbackBody.type !== 'BlockStatement') {
-        return;
-      }
-
+    if (singleExpression && singleExpression.callee.type === 'MemberExpression') {
       path.replace(
-        j.blockStatement([
-          j.variableDeclaration('const', [
-            j.variableDeclarator(j.identifier(scopeVarName), j.callExpression(j.identifier(getScopeMethodName), [])),
-          ]),
-          ...callbackBody.body,
-        ])
+        j.callExpression(
+          j.memberExpression(j.callExpression(j.identifier(getScopeMethodName), []), singleExpression.callee.property),
+          singleExpression.arguments
+        )
       );
-    });
-
-    // Replace e.g. `SentryUtuils.configureScope()`
-    tree.find(j.CallExpression).forEach(path => {
-      if (
-        path.value.callee.type !== 'MemberExpression' ||
-        path.value.callee.property.type !== 'Identifier' ||
-        path.value.callee.property.name !== 'configureScope'
-      ) {
-        return;
-      }
-
-      const calleeObj = path.value.callee.object;
-
-      const callbackFn = path.value.arguments[0];
-      if (!callbackFn || (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression')) {
-        return;
-      }
-
-      // The var name of the scope callback, e.g. (scope) => {} would be "scope"
-      const scopeVarName = callbackFn.params[0]?.type === 'Identifier' ? callbackFn.params[0].name : undefined;
-
-      if (!scopeVarName) {
-        return;
-      }
-
-      const callbackBody = callbackFn.body;
-
-      // Very hacky, but we check if the callee (e.g. hub.configureScope() or getCurrentHub().configureScope())
-      // contains "hub", and if so, we use `getScope()` instead of `getCurrentScope()`
-      let getScopeMethodName = /hub/i.test(j(calleeObj).toSource()) ? 'getScope' : 'getCurrentScope';
-
-      // If we only have a single statement inside, we can avoid the block
-      // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
-      // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
-      const singleExpression = getExpression(callbackBody, scopeVarName);
-
-      if (singleExpression && singleExpression.callee.type === 'MemberExpression') {
-        path.replace(
-          j.callExpression(
-            j.memberExpression(
-              j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), [])),
-              singleExpression.callee.property
-            ),
-            singleExpression.arguments
-          )
-        );
-        return;
-      }
-
-      if (callbackBody.type !== 'BlockStatement') {
-        return;
-      }
-
-      path.replace(
-        j.blockStatement([
-          j.variableDeclaration('const', [
-            j.variableDeclarator(
-              j.identifier(scopeVarName),
-              j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), []))
-            ),
-          ]),
-          ...callbackBody.body,
-        ])
-      );
-    });
-
-    const sdk = options.sentry?.sdk;
-    if (sdk) {
-      replaceImported(j, tree, source, sdk, new Map([['configureScope', 'getCurrentScope']]));
+      return;
     }
 
-    return tree.toSource();
+    if (callbackBody.type !== 'BlockStatement') {
+      return;
+    }
+
+    path.replace(
+      j.blockStatement([
+        j.variableDeclaration('const', [
+          j.variableDeclarator(j.identifier(scopeVarName), j.callExpression(j.identifier(getScopeMethodName), [])),
+        ]),
+        ...callbackBody.body,
+      ])
+    );
   });
-};
+
+  // Replace e.g. `SentryUtuils.configureScope()`
+  tree.find(j.CallExpression).forEach(path => {
+    if (
+      path.value.callee.type !== 'MemberExpression' ||
+      path.value.callee.property.type !== 'Identifier' ||
+      path.value.callee.property.name !== 'configureScope'
+    ) {
+      return;
+    }
+
+    const calleeObj = path.value.callee.object;
+
+    const callbackFn = path.value.arguments[0];
+    if (!callbackFn || (callbackFn.type !== 'ArrowFunctionExpression' && callbackFn.type !== 'FunctionExpression')) {
+      return;
+    }
+
+    // The var name of the scope callback, e.g. (scope) => {} would be "scope"
+    const scopeVarName = callbackFn.params[0]?.type === 'Identifier' ? callbackFn.params[0].name : undefined;
+
+    if (!scopeVarName) {
+      return;
+    }
+
+    const callbackBody = callbackFn.body;
+
+    // Very hacky, but we check if the callee (e.g. hub.configureScope() or getCurrentHub().configureScope())
+    // contains "hub", and if so, we use `getScope()` instead of `getCurrentScope()`
+    let getScopeMethodName = /hub/i.test(j(calleeObj).toSource()) ? 'getScope' : 'getCurrentScope';
+
+    // If we only have a single statement inside, we can avoid the block
+    // This handles both directly having a call expression: configureScope(scope => scope.setTag('foo', 'bar'))
+    // As well as having a block with only a single call expression inside: configureScope(scope => { scope.setTag('foo', 'bar'); })
+    const singleExpression = getExpression(callbackBody, scopeVarName);
+
+    if (singleExpression && singleExpression.callee.type === 'MemberExpression') {
+      path.replace(
+        j.callExpression(
+          j.memberExpression(
+            j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), [])),
+            singleExpression.callee.property
+          ),
+          singleExpression.arguments
+        )
+      );
+      return;
+    }
+
+    if (callbackBody.type !== 'BlockStatement') {
+      return;
+    }
+
+    path.replace(
+      j.blockStatement([
+        j.variableDeclaration('const', [
+          j.variableDeclarator(
+            j.identifier(scopeVarName),
+            j.memberExpression(calleeObj, j.callExpression(j.identifier(getScopeMethodName), []))
+          ),
+        ]),
+        ...callbackBody.body,
+      ])
+    );
+  });
+
+  const sdk = options.sentry?.sdk;
+  if (sdk) {
+    replaceImported(j, tree, source, sdk, new Map([['configureScope', 'getCurrentScope']]));
+  }
+
+  return tree.toSource();
+}
 
 /**
  * This methods detects if the body of a function is only a single expression, and if so returns that.
@@ -215,3 +210,5 @@ function getExpression(callbackBody, scopeVarName) {
 
   return undefined;
 }
+
+module.exports = adapt(configureScope);

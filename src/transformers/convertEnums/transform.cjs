@@ -1,5 +1,6 @@
+const { adapt } = require('jscodeshift-adapters');
+
 const { hasSentryImportOrRequire } = require('../../utils/jscodeshift.cjs');
-const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 const SpanStatusMap = new Map([
   ['Ok', 'ok'],
@@ -45,76 +46,73 @@ const enumMap = new Map([
  *
  * @type {import('jscodeshift').Transform}
  */
-module.exports = function (fileInfo, api) {
+function convertEnums(fileInfo, api) {
   const j = api.jscodeshift;
   const source = fileInfo.source;
-  const fileName = fileInfo.path;
 
   // Bail out if file has no sentry import - nothing to do then!
   if (!hasSentryImportOrRequire(source)) {
     return undefined;
   }
 
-  return wrapJscodeshift(j, source, fileName, (j, source) => {
-    const tree = j(source);
+  const tree = j(source);
 
-    /** @type {Record<string,string>} */
-    const remove = {
-      Severity: 'unused',
-      SpanStatus: 'unused',
-    };
+  /** @type {Record<string,string>} */
+  const remove = {
+    Severity: 'unused',
+    SpanStatus: 'unused',
+  };
 
-    tree.find(j.MemberExpression, { property: { type: 'Identifier' } }).forEach(path => {
-      if (path.value.property.type !== 'Identifier') {
-        return;
-      }
-
-      let enumKey = undefined;
-
-      if (path.value.object.type === 'Identifier') {
-        enumKey = path.value.object.name;
-      } else if (
-        path.value.object.type === 'MemberExpression' &&
-        path.value.object.object.type === 'Identifier' &&
-        path.value.object.object.name === 'Sentry' &&
-        path.value.object.property.type === 'Identifier'
-      ) {
-        enumKey = path.value.object.property.name;
-      }
-
-      if (!enumKey) {
-        return;
-      }
-
-      const map = enumMap.get(enumKey);
-
-      if (!map) {
-        return;
-      }
-
-      const value = path.value.property.name;
-      const newValue = map.get(value);
-
-      if (newValue) {
-        path.replace(j.stringLiteral(newValue));
-        if (remove[enumKey] !== 'no') {
-          remove[enumKey] = 'yes';
-        }
-      } else {
-        // Unknown value, do not remove it
-        remove[enumKey] = 'no';
-      }
-    });
-
-    const toRemove = Object.keys(remove).filter(key => remove[key] === 'yes');
-
-    if (toRemove.length > 0) {
-      removeImportedIdentifiers(j, tree, toRemove);
+  tree.find(j.MemberExpression, { property: { type: 'Identifier' } }).forEach(path => {
+    if (path.value.property.type !== 'Identifier') {
+      return;
     }
 
-    return tree.toSource();
+    let enumKey = undefined;
+
+    if (path.value.object.type === 'Identifier') {
+      enumKey = path.value.object.name;
+    } else if (
+      path.value.object.type === 'MemberExpression' &&
+      path.value.object.object.type === 'Identifier' &&
+      path.value.object.object.name === 'Sentry' &&
+      path.value.object.property.type === 'Identifier'
+    ) {
+      enumKey = path.value.object.property.name;
+    }
+
+    if (!enumKey) {
+      return;
+    }
+
+    const map = enumMap.get(enumKey);
+
+    if (!map) {
+      return;
+    }
+
+    const value = path.value.property.name;
+    const newValue = map.get(value);
+
+    if (newValue) {
+      path.replace(j.stringLiteral(newValue));
+      if (remove[enumKey] !== 'no') {
+        remove[enumKey] = 'yes';
+      }
+    } else {
+      // Unknown value, do not remove it
+      remove[enumKey] = 'no';
+    }
   });
-};
+
+  const toRemove = Object.keys(remove).filter(key => remove[key] === 'yes');
+
+  if (toRemove.length > 0) {
+    removeImportedIdentifiers(j, tree, toRemove);
+  }
+
+  return tree.toSource();
+}
 
 /**
  * Deduplicate imported identifiers.
@@ -198,3 +196,5 @@ function removeImportedIdentifiers(j, tree, identifiers) {
       }
     });
 }
+
+module.exports = adapt(convertEnums);
