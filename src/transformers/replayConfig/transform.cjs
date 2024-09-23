@@ -1,5 +1,6 @@
+const { adapt } = require('jscodeshift-adapters');
+
 const { getSentryInitExpression } = require('../../utils/jscodeshift.cjs');
-const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 /**
  * This transform converts old replay privacy options to their new format.
@@ -15,82 +16,80 @@ const { wrapJscodeshift } = require('../../utils/dom.cjs');
  *
  * @type {import('jscodeshift').Transform}
  */
-module.exports = function (fileInfo, api) {
+function replayConfig(fileInfo, api) {
   const j = api.jscodeshift;
   const source = fileInfo.source;
-  const fileName = fileInfo.path;
 
-  return wrapJscodeshift(j, source, fileName, (j, source) => {
-    const tree = j(source);
+  const tree = j(source);
 
-    let block = j.arrayExpression([]);
-    let ignore = j.arrayExpression([]);
-    let mask = j.arrayExpression([]);
+  let block = j.arrayExpression([]);
+  let ignore = j.arrayExpression([]);
+  let mask = j.arrayExpression([]);
 
-    /** @type {number | undefined} */
-    let replaysSessionSampleRate = undefined;
-    /** @type {number | undefined} */
-    let replaysOnErrorSampleRate = undefined;
+  /** @type {number | undefined} */
+  let replaysSessionSampleRate = undefined;
+  /** @type {number | undefined} */
+  let replaysOnErrorSampleRate = undefined;
 
-    // First find new XX.Replay()
-    const newReplayExpression = getReplayNewExpression(j, tree);
+  // First find new XX.Replay()
+  const newReplayExpression = getReplayNewExpression(j, tree);
 
-    // If no new Replay() found, nothing to do
-    if (!newReplayExpression) {
-      return undefined;
-    }
+  // If no new Replay() found, nothing to do
+  if (!newReplayExpression) {
+    return undefined;
+  }
 
-    // If we have an old sample rate, check for Sentry.init() as well
-    const hasOldSampleRate = /(sessionSampleRate)|(errorSampleRate)/gim.test(source);
-    const sentryInitExpression = hasOldSampleRate ? getSentryInitExpression(j, tree, source) : undefined;
+  // If we have an old sample rate, check for Sentry.init() as well
+  const hasOldSampleRate = /(sessionSampleRate)|(errorSampleRate)/gim.test(source);
+  const sentryInitExpression = hasOldSampleRate ? getSentryInitExpression(j, tree, source) : undefined;
 
-    // Short circuit: If none of the "old" options are used, we just bail (=nothing to do)
-    if (
-      !hasOldSampleRate &&
-      !/(blockSelector)|(blockClass)|(ignoreClass)|(maskTextClass)|(maskTextSelector)/gim.test(source)
-    ) {
+  // Short circuit: If none of the "old" options are used, we just bail (=nothing to do)
+  if (
+    !hasOldSampleRate &&
+    !/(blockSelector)|(blockClass)|(ignoreClass)|(maskTextClass)|(maskTextSelector)/gim.test(source)
+  ) {
+    return;
+  }
+
+  // Now find properties inside of new Replay()
+  newReplayExpression.find(j.ObjectProperty).forEach(path => {
+    if (path.value.key.type !== 'Identifier') {
       return;
     }
 
-    // Now find properties inside of new Replay()
-    newReplayExpression.find(j.ObjectProperty).forEach(path => {
-      if (path.value.key.type !== 'Identifier') {
-        return;
-      }
+    const keyName = path.value.key.name;
 
-      const keyName = path.value.key.name;
-
-      // Find arrays for existing properties (e.g. block: ['aa', 'bb'])
-      if (path.value.value.type === 'ArrayExpression') {
-        /*
+    // Find arrays for existing properties (e.g. block: ['aa', 'bb'])
+    if (path.value.value.type === 'ArrayExpression') {
+      /*
         We want to handle these:
         block: ['aa', 'bb'],
         ignore: ['aa', 'bb'],
         mask: ['aa', 'bb']
       */
 
-        if (keyName === 'block') {
-          block = mergeArrayExpressions(j, block, path.value.value);
-          j(path).remove();
-          return;
-        }
-
-        if (keyName === 'ignore') {
-          ignore = mergeArrayExpressions(j, ignore, path.value.value);
-          j(path).remove();
-          return;
-        }
-
-        if (keyName === 'mask') {
-          mask = mergeArrayExpressions(j, mask, path.value.value);
-          j(path).remove();
-          return;
-        }
+      if (keyName === 'block') {
+        block = mergeArrayExpressions(j, block, path.value.value);
+        j(path).remove();
+        return;
       }
 
-      // Find string literals values
-      if (path.value.value.type === 'StringLiteral') {
-        /*
+      if (keyName === 'ignore') {
+        ignore = mergeArrayExpressions(j, ignore, path.value.value);
+        j(path).remove();
+        return;
+      }
+
+      if (keyName === 'mask') {
+        mask = mergeArrayExpressions(j, mask, path.value.value);
+        j(path).remove();
+        return;
+      }
+    }
+
+    // Find string literals values
+    if (path.value.value.type === 'StringLiteral') {
+      /*
        We want to handle these:
         blockSelector: '.my-blocks-selector,[my-block-attr]',
         blockClass: 'my-block-class',
@@ -99,107 +98,106 @@ module.exports = function (fileInfo, api) {
         maskTextSelector: '.my-mask-text-selector,[my-mask-text-attr]',
       */
 
-        const value = path.value.value.value;
+      const value = path.value.value.value;
 
-        if (keyName === 'blockSelector') {
-          block.elements.push(...convertSelector(value).map(v => j.literal(v)));
-          j(path).remove();
-          return;
-        }
-        if (keyName === 'blockClass') {
-          block.elements.push(...convertClassName(value).map(v => j.literal(v)));
-          j(path).remove();
-          return;
-        }
-        if (keyName === 'ignoreClass') {
-          ignore.elements.push(...convertClassName(value).map(v => j.literal(v)));
-          j(path).remove();
-          return;
-        }
-        if (keyName === 'maskTextClass') {
-          mask.elements.push(...convertClassName(value).map(v => j.literal(v)));
-          j(path).remove();
-          return;
-        }
-        if (keyName === 'maskTextSelector') {
-          mask.elements.push(...convertSelector(value).map(v => j.literal(v)));
-          j(path).remove();
-          return;
-        }
+      if (keyName === 'blockSelector') {
+        block.elements.push(...convertSelector(value).map(v => j.literal(v)));
+        j(path).remove();
+        return;
       }
+      if (keyName === 'blockClass') {
+        block.elements.push(...convertClassName(value).map(v => j.literal(v)));
+        j(path).remove();
+        return;
+      }
+      if (keyName === 'ignoreClass') {
+        ignore.elements.push(...convertClassName(value).map(v => j.literal(v)));
+        j(path).remove();
+        return;
+      }
+      if (keyName === 'maskTextClass') {
+        mask.elements.push(...convertClassName(value).map(v => j.literal(v)));
+        j(path).remove();
+        return;
+      }
+      if (keyName === 'maskTextSelector') {
+        mask.elements.push(...convertSelector(value).map(v => j.literal(v)));
+        j(path).remove();
+        return;
+      }
+    }
 
-      // Find numeric literal values for sample rates
-      // only do that if we have a Sentry.init() in the same file, otherwise there is no place to put it
-      // and we lose the sample rate
-      if (sentryInitExpression && path.value.value.type === 'NumericLiteral') {
-        /*
+    // Find numeric literal values for sample rates
+    // only do that if we have a Sentry.init() in the same file, otherwise there is no place to put it
+    // and we lose the sample rate
+    if (sentryInitExpression && path.value.value.type === 'NumericLiteral') {
+      /*
         We want to handle these:
         sessionSampleRate: 0.1,
         errorSampleRate: 0.75,
       */
 
-        const value = path.value.value.value;
-        if (keyName === 'sessionSampleRate') {
-          replaysSessionSampleRate = value;
-          j(path).remove();
-          return;
-        }
-        if (keyName === 'errorSampleRate') {
-          replaysOnErrorSampleRate = value;
-          j(path).remove();
-          return;
-        }
+      const value = path.value.value.value;
+      if (keyName === 'sessionSampleRate') {
+        replaysSessionSampleRate = value;
+        j(path).remove();
+        return;
       }
-    });
+      if (keyName === 'errorSampleRate') {
+        replaysOnErrorSampleRate = value;
+        j(path).remove();
+        return;
+      }
+    }
+  });
 
-    // Finally, actually update the options object
-    newReplayExpression.forEach(path => {
+  // Finally, actually update the options object
+  newReplayExpression.forEach(path => {
+    const arg = path.value.arguments[0];
+
+    if (!arg || arg.type !== 'ObjectExpression') {
+      return;
+    }
+
+    if (block.elements.length > 0) {
+      arg.properties.push(j.property('init', j.identifier('block'), block));
+    }
+    if (ignore.elements.length > 0) {
+      arg.properties.push(j.property('init', j.identifier('ignore'), ignore));
+    }
+    if (mask.elements.length > 0) {
+      arg.properties.push(j.property('init', j.identifier('mask'), mask));
+    }
+  });
+
+  // Also maybe update the Sentry.init options
+  if (
+    sentryInitExpression &&
+    (typeof replaysSessionSampleRate === 'number' || typeof replaysOnErrorSampleRate === 'number')
+  ) {
+    sentryInitExpression.forEach(path => {
       const arg = path.value.arguments[0];
 
       if (!arg || arg.type !== 'ObjectExpression') {
         return;
       }
 
-      if (block.elements.length > 0) {
-        arg.properties.push(j.property('init', j.identifier('block'), block));
+      if (typeof replaysSessionSampleRate === 'number') {
+        arg.properties.push(
+          j.property('init', j.identifier('replaysSessionSampleRate'), j.literal(replaysSessionSampleRate))
+        );
       }
-      if (ignore.elements.length > 0) {
-        arg.properties.push(j.property('init', j.identifier('ignore'), ignore));
-      }
-      if (mask.elements.length > 0) {
-        arg.properties.push(j.property('init', j.identifier('mask'), mask));
+
+      if (typeof replaysOnErrorSampleRate === 'number') {
+        arg.properties.push(
+          j.property('init', j.identifier('replaysOnErrorSampleRate'), j.literal(replaysOnErrorSampleRate))
+        );
       }
     });
+  }
 
-    // Also maybe update the Sentry.init options
-    if (
-      sentryInitExpression &&
-      (typeof replaysSessionSampleRate === 'number' || typeof replaysOnErrorSampleRate === 'number')
-    ) {
-      sentryInitExpression.forEach(path => {
-        const arg = path.value.arguments[0];
-
-        if (!arg || arg.type !== 'ObjectExpression') {
-          return;
-        }
-
-        if (typeof replaysSessionSampleRate === 'number') {
-          arg.properties.push(
-            j.property('init', j.identifier('replaysSessionSampleRate'), j.literal(replaysSessionSampleRate))
-          );
-        }
-
-        if (typeof replaysOnErrorSampleRate === 'number') {
-          arg.properties.push(
-            j.property('init', j.identifier('replaysOnErrorSampleRate'), j.literal(replaysOnErrorSampleRate))
-          );
-        }
-      });
-    }
-
-    return tree.toSource();
-  });
-};
+  return tree.toSource();
+}
 
 /**
  * @param {string} selector
@@ -256,3 +254,5 @@ function mergeArrayExpressions(j, existing, added) {
   // Else, make sure to add the added elements to the exsiting one
   return j.arrayExpression([...existing.elements, ...added.elements]);
 }
+
+module.exports = adapt(replayConfig);

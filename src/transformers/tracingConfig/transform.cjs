@@ -1,5 +1,6 @@
+const { adapt } = require('jscodeshift-adapters');
+
 const { getSentryInitExpression } = require('../../utils/jscodeshift.cjs');
-const { wrapJscodeshift } = require('../../utils/dom.cjs');
 
 /**
  * This transform converts old tracing options to their new format.
@@ -11,41 +12,38 @@ const { wrapJscodeshift } = require('../../utils/dom.cjs');
  *
  * @type {import('jscodeshift').Transform}
  */
-module.exports = function (fileInfo, api) {
+function tracingConfig(fileInfo, api) {
   const j = api.jscodeshift;
   const source = fileInfo.source;
-  const fileName = fileInfo.path;
 
-  return wrapJscodeshift(j, source, fileName, (j, source) => {
-    const tree = j(source);
+  const tree = j(source);
 
-    // First we look for `tracePropagationTargets` as integration config, moving it to root
+  // First we look for `tracePropagationTargets` as integration config, moving it to root
 
-    const sentryInit = getSentryInitExpression(j, tree, source);
+  const sentryInit = getSentryInitExpression(j, tree, source);
 
-    // Nothing to do if we can't find the init expression
-    if (!sentryInit) {
-      return;
-    }
+  // Nothing to do if we can't find the init expression
+  if (!sentryInit) {
+    return;
+  }
 
-    // Find & update options on `new BrowserTracing()`
-    const newBrowserTracing = getIntegrationNewExpression(j, tree, 'BrowserTracing');
-    const newHttp = getIntegrationNewExpression(j, tree, 'Http');
-    const newUndici = getIntegrationNewExpression(j, tree, 'Undici');
+  // Find & update options on `new BrowserTracing()`
+  const newBrowserTracing = getIntegrationNewExpression(j, tree, 'BrowserTracing');
+  const newHttp = getIntegrationNewExpression(j, tree, 'Http');
+  const newUndici = getIntegrationNewExpression(j, tree, 'Undici');
 
-    if (newBrowserTracing) {
-      fixTracePropagationTargets(j, sentryInit, newBrowserTracing);
-    }
-    if (newHttp) {
-      fixTracePropagationTargets(j, sentryInit, newHttp);
-    }
-    if (newUndici) {
-      fixTracePropagationTargets(j, sentryInit, newUndici);
-    }
+  if (newBrowserTracing) {
+    fixTracePropagationTargets(j, sentryInit, newBrowserTracing);
+  }
+  if (newHttp) {
+    fixTracePropagationTargets(j, sentryInit, newHttp);
+  }
+  if (newUndici) {
+    fixTracePropagationTargets(j, sentryInit, newUndici);
+  }
 
-    return tree.toSource();
-  });
-};
+  return tree.toSource();
+}
 
 /**
  *
@@ -114,3 +112,5 @@ function fixTracePropagationTargets(j, sentryInit, newExpression) {
       });
     });
 }
+
+module.exports = adapt(tracingConfig);
