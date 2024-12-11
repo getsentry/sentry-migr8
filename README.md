@@ -2,6 +2,12 @@
 
 Migrate the usage of your Sentry SDK v7 to be v8 compatible.
 
+## Archive Notice
+
+This Repository was archived. Sentry Migr8 was created for version 8 of the Sentry JavaScript SDKs to aid migrating
+to the various new APIs introduced with v8. Given we're working on version 9 of the SDK already, which will include
+way less breaking changes, @sentry/migr8 has been archived and is unlikely to experience further releases.
+
 ## Usage
 
 Run `@sentry/migr8` in your application directory:
